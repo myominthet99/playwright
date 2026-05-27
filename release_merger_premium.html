@@ -1,0 +1,3037 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Release Merger Premium</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+    --bg: #030712;
+    --text: #f3f4f6;
+    --text-dim: #9ca3af;
+    --text-muted: #4b5563;
+    --glass-bg: rgba(17, 24, 39, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --row-hover: rgba(255, 255, 255, 0.04);
+    --tree-line: rgba(255, 255, 255, 0.06);
+    --inp-bg: rgba(17, 24, 39, 0.8);
+    --inp-border: rgba(255, 255, 255, 0.1);
+    --scrollbar: rgba(255, 255, 255, 0.1);
+    --scrollbar-h: rgba(255, 255, 255, 0.2);
+    --hist-bg: rgba(255, 255, 255, 0.02);
+    --hist-border: rgba(255, 255, 255, 0.04);
+    --sql-drag-bg: rgba(99, 102, 241, 0.06);
+    --sql-drag-border: rgba(99, 102, 241, 0.2);
+    --sql-over-bg: rgba(99, 102, 241, 0.15);
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] {
+    --bg: #f8fafc;
+    --text: #0f172a;
+    --text-dim: #475569;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --row-hover: rgba(0, 0, 0, 0.03);
+    --tree-line: rgba(0, 0, 0, 0.08);
+    --inp-bg: #ffffff;
+    --inp-border: rgba(0, 0, 0, 0.12);
+    --scrollbar: rgba(0, 0, 0, 0.1);
+    --scrollbar-h: rgba(0, 0, 0, 0.2);
+    --hist-bg: rgba(0, 0, 0, 0.01);
+    --hist-border: rgba(0, 0, 0, 0.05);
+    --sql-drag-bg: rgba(79, 70, 229, 0.04);
+    --sql-drag-border: rgba(79, 70, 229, 0.15);
+    --sql-over-bg: rgba(79, 70, 229, 0.1);
+    --accent: #4f46e5;
+    --accent-glow: rgba(79, 70, 229, 0.1);
+}
+
+* {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+    margin: 0;
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+}
+
+/* Aurora Backdrop Animation */
+.aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.5s;
+}
+[data-theme="light"] .aurora-bg { opacity: 0.3; }
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.45;
+}
+.orb-1 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    top: -150px;
+    left: -150px;
+    animation: orbit1 20s ease-in-out infinite alternate;
+}
+.orb-2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+    bottom: -100px;
+    right: -100px;
+    animation: orbit2 25s ease-in-out infinite alternate;
+}
+.orb-3 {
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+    top: 35%;
+    left: 25%;
+    animation: orbit3 30s ease-in-out infinite alternate;
+}
+
+@keyframes orbit1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(120px, 150px) scale(1.2); }
+}
+@keyframes orbit2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-150px, -100px) scale(1.15); }
+}
+@keyframes orbit3 {
+    0% { transform: scale(0.9); }
+    100% { transform: scale(1.3); }
+}
+
+/* Glassmorphism Classes */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+}
+
+.drop-zone {
+    border: 2px dashed var(--inp-border);
+    border-radius: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--inp-bg);
+}
+.drop-zone:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px var(--accent-glow);
+}
+.drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--sql-over-bg);
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: scale(0.98);
+}
+.drop-zone.has-files {
+    border-style: solid;
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+/* Gradient Buttons */
+.btn-primary {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    font-weight: 700;
+    transition: all 0.3s;
+    box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.4);
+}
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.6);
+    filter: brightness(1.1);
+}
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+.btn-primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: var(--inp-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    transition: all 0.2s;
+}
+.btn-secondary:hover:not(:disabled) {
+    background: var(--row-hover);
+    border-color: var(--text-muted);
+}
+
+/* Fancy Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-h);
+}
+
+/* Tree Navigation Styling */
+.tree-node {
+    display: flex;
+    flex-direction: column;
+}
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    cursor: default;
+    min-width: 0;
+}
+.tree-row:hover {
+    background: var(--row-hover);
+}
+.tree-row.is-folder {
+    cursor: pointer;
+}
+.tree-row.dup-winner {
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 3px solid #f59e0b;
+}
+.tree-row.dup-loser {
+    opacity: 0.45;
+}
+.tree-indent {
+    display: flex;
+    flex-direction: column;
+    padding-left: 18px;
+    border-left: 1.5px solid var(--tree-line);
+    margin-left: 14px;
+    transition: max-height 0.3s ease-out;
+}
+.tree-indent.collapsed {
+    display: none;
+}
+.tree-label {
+    font-size: 0.85rem;
+    font-family: 'Fira Code', monospace;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tree-folder-label {
+    color: var(--text);
+    font-weight: 600;
+    font-family: inherit;
+}
+
+/* Highlighter formatting */
+.sql-pre {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    white-space: pre;
+    tab-size: 4;
+}
+.hl-comment { color: #6b7280; font-style: italic; }
+.hl-src     { color: #818cf8; font-weight: 700; border-bottom: 1px dashed rgba(129, 140, 248, 0.3); padding-bottom: 2px; }
+.hl-string  { color: #fbbf24; }
+.hl-kw      { color: #60a5fa; font-weight: 600; }
+.hl-num     { color: #34d399; }
+
+[data-theme="light"] .hl-comment { color: #9ca3af; }
+[data-theme="light"] .hl-kw      { color: #2563eb; }
+[data-theme="light"] .hl-string  { color: #b45309; }
+[data-theme="light"] .hl-num     { color: #047857; }
+[data-theme="light"] .hl-src     { color: #4f46e5; }
+
+/* Custom Switch Toggle */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: var(--inp-border);
+    transition: .3s;
+    border-radius: 24px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: var(--accent);
+}
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* SQL Draggable items */
+.sql-order-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--sql-drag-border);
+    background: var(--sql-drag-bg);
+    cursor: grab;
+    transition: all 0.2s;
+    user-select: none;
+}
+.sql-order-item:active {
+    cursor: grabbing;
+}
+.sql-order-item.dragging {
+    opacity: 0.3;
+    transform: scale(0.97);
+    border-style: dashed;
+}
+.sql-order-item.drag-over {
+    border-color: var(--accent);
+    background: var(--sql-over-bg);
+    transform: translateY(-2px);
+}
+
+/* Shimmer load animation */
+.shimmer {
+    background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.05) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: loadingShimmer 1.5s infinite;
+}
+@keyframes loadingShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Missing Tailwind-style text utilities for CSS vars */
+.text-dim   { color: var(--text-dim); }
+.text-muted { color: var(--text-muted); }
+
+/* Collapse animation */
+.collapse-body {
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pulsing border on empty drop zone */
+@keyframes dzPulse {
+    0%, 100% { border-color: var(--inp-border); box-shadow: none; }
+    50%       { border-color: var(--accent); box-shadow: 0 0 18px var(--accent-glow); }
+}
+.drop-zone:not(.has-files) { animation: dzPulse 3.5s ease-in-out infinite; }
+
+/* Animated stripe on active progress bar */
+@keyframes progressStripe {
+    from { background-position: 1rem 0; }
+    to   { background-position: 0 0; }
+}
+.pb-active {
+    background-image: linear-gradient(
+        45deg,
+        rgba(255,255,255,.12) 25%, transparent 25%,
+        transparent 50%, rgba(255,255,255,.12) 50%,
+        rgba(255,255,255,.12) 75%, transparent 75%, transparent
+    );
+    background-size: 1rem 1rem;
+    animation: progressStripe 0.8s linear infinite;
+}
+
+/* Stat pill icon spacing */
+.stat-icon { display: inline-flex; align-items: center; gap: 4px; }
+
+/* SQL line gutter */
+.sql-gutter {
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px 0 4px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    margin-right: 16px;
+    min-width: 44px;
+    text-align: right;
+    pointer-events: none;
+    user-select: none;
+}
+.sql-gutter-num { color: #374151; font-size: 0.72rem; line-height: 1.7; font-family: 'Fira Code', monospace; }
+.sql-wrap { display: flex; overflow: auto; }
+
+/* Merge button loading shimmer */
+.btn-primary.loading {
+    background: linear-gradient(135deg, #3730a3 0%, #5b21b6 100%);
+    animation: loadingShimmer 1.5s infinite;
+    pointer-events: none;
+}
+
+/* Tree expand icon transition */
+.node-icon { transition: color 0.15s, transform 0.15s; }
+
+/* DLL version badge inline in tree */
+.dll-ver {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.68rem;
+    color: #818cf8;
+    opacity: 0.75;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+.dll-ver.loading { opacity: 0.3; animation: loadingShimmer 1.5s infinite; }
+.dll-ver.unknown { opacity: 0.2; font-style: italic; }
+/* DLL date modified badge */
+.dll-date {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: #6ee7b7;
+    opacity: 0.65;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+.dll-date.loading { opacity: 0.3; animation: loadingShimmer 1.5s infinite; }
+
+/* Accent swatch picker */
+.accent-swatch {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+}
+.accent-swatch:hover { transform: scale(1.2); }
+.accent-swatch.active { border-color: white; transform: scale(1.15); }
+
+/* Diff table */
+.diff-row-added   { background: rgba(16,185,129,0.07); border-left: 3px solid #10b981; }
+.diff-row-removed { background: rgba(239,68,68,0.07);  border-left: 3px solid #ef4444; }
+.diff-row-same    { background: rgba(255,255,255,0.01); border-left: 3px solid transparent; }
+
+/* Validation issue rows */
+.val-error { border-left: 3px solid #ef4444; background: rgba(239,68,68,0.06); }
+.val-warn  { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.06); }
+.val-info  { border-left: 3px solid #6366f1; background: rgba(99,102,241,0.06); }
+.val-ok    { border-left: 3px solid #10b981; background: rgba(16,185,129,0.06); }
+</style>
+</head>
+<body class="relative">
+
+<!-- Backdrop graphics -->
+<div class="aurora-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+<!-- Custom Confirmation Dialog / Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div class="glass max-w-md w-full rounded-2xl p-6 shadow-2xl border border-white/10 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center gap-3 text-amber-500 mb-3">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <h4 class="font-bold text-lg" id="confirm-title">Are you sure?</h4>
+        </div>
+        <p class="text-sm opacity-80 mb-6" id="confirm-message">This action cannot be undone.</p>
+        <div class="flex gap-3 justify-end">
+            <button id="confirm-cancel" class="px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-colors">Cancel</button>
+            <button id="confirm-proceed" class="px-5 py-2 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors">Proceed</button>
+        </div>
+    </div>
+</div>
+
+<!-- Main wrapper -->
+<main class="relative z-10 max-w-7xl mx-auto px-4 py-6 md:py-10 flex flex-col gap-6">
+    
+    <!-- Top Nav / Header -->
+    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/5">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 shadow-xl shadow-indigo-500/20">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">Release Merger</h1>
+                <p class="text-xs text-indigo-400 font-mono mt-0.5">Premium v4.0 · Smart DevOps Bundler · <span id="visitor-count" title="Total page visits across all users" style="opacity:0.7">👥 ···</span></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5 self-stretch sm:self-auto justify-end">
+            <!-- Accent color swatches -->
+            <div class="glass rounded-xl px-2.5 py-2 flex items-center gap-1.5 border border-white/10" title="Accent color">
+                <span class="text-[10px] text-muted font-semibold mr-0.5">Accent</span>
+                <button class="accent-swatch active" data-color="#6366f1" style="background:#6366f1" onclick="setAccent('#6366f1','#6366f126')" title="Indigo"></button>
+                <button class="accent-swatch" data-color="#8b5cf6" style="background:#8b5cf6" onclick="setAccent('#8b5cf6','#8b5cf626')" title="Violet"></button>
+                <button class="accent-swatch" data-color="#ec4899" style="background:#ec4899" onclick="setAccent('#ec4899','#ec489926')" title="Pink"></button>
+                <button class="accent-swatch" data-color="#06b6d4" style="background:#06b6d4" onclick="setAccent('#06b6d4','#06b6d426')" title="Cyan"></button>
+                <button class="accent-swatch" data-color="#10b981" style="background:#10b981" onclick="setAccent('#10b981','#10b98126')" title="Emerald"></button>
+                <button class="accent-swatch" data-color="#f59e0b" style="background:#f59e0b" onclick="setAccent('#f59e0b','#f59e0b26')" title="Amber"></button>
+            </div>
+            <button id="theme-btn" onclick="toggleTheme()" class="w-10 h-10 glass rounded-xl flex items-center justify-center hover:bg-white/10 transition-all text-lg" title="Toggle theme (Light/Dark)">
+                🌙
+            </button>
+            <button onclick="showHelp()" class="text-xs px-4 py-2.5 glass rounded-xl hover:bg-white/10 transition-all font-semibold flex items-center gap-1.5 border border-white/10">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Help Manual
+            </button>
+        </div>
+    </header>
+
+    <!-- Interactive stats dashboard -->
+    <section id="stats-bar" class="hidden glass rounded-2xl px-5 py-3.5 flex flex-wrap items-center gap-3 border border-white/5 transition-all">
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-dim">Active Workspace</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <span id="stat-total" class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10">
+                <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                0 files
+            </span>
+            <span id="stat-blazor" class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                0 DLL
+            </span>
+            <span id="stat-sql" class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                0 SQL
+            </span>
+            <span id="stat-folders" class="hidden stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                0 folders
+            </span>
+            <span id="stat-excl" class="hidden stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                0 excluded
+            </span>
+            <span id="stat-dup" class="hidden stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/20 text-amber-400 cursor-pointer hover:bg-amber-500/20 transition-all" onclick="showConflictResolver()" title="Click to resolve conflicts">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                0 conflicts — Resolve
+            </span>
+        </div>
+        <button onclick="askClearAll()" class="ml-auto text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20 transition-all">
+            ✕ Reset Workspace
+        </button>
+    </section>
+
+    <!-- Main App Split Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_1.40fr] gap-6 items-start">
+        
+        <!-- Left Column: Dropzones & Configuration settings -->
+        <div class="flex flex-col gap-5">
+            
+            <!-- Drag & Drop container -->
+            <div id="drop-zone" class="drop-zone p-8 flex flex-col items-center justify-center" onclick="document.getElementById('file-input').click()">
+                <div id="dz-icon" class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner mb-4 transition-all">
+                    <svg id="dz-svg" class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                </div>
+                <h3 id="drop-label" class="text-sm font-bold tracking-tight mb-1">Upload Release Directory</h3>
+                <p class="text-xs text-dim mb-4">Drag &amp; drop a folder or ZIP · or click to browse</p>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-muted font-mono">webkitdirectory</span>
+                    <span class="text-[10px] px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono">DLL + SQL</span>
+                    <span onclick="event.stopPropagation();document.getElementById('zip-input').click()" class="text-[10px] px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono cursor-pointer hover:bg-emerald-500/20 transition-all">📦 Browse ZIP</span>
+                </div>
+                <input type="file" id="file-input" multiple webkitdirectory directory style="display:none">
+                <input type="file" id="zip-input" accept=".zip" multiple style="display:none">
+            </div>
+
+            <!-- Append folder CTA (conditional) -->
+            <button id="add-more-btn" class="hidden btn-secondary py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="document.getElementById('append-input').click()">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Merge Additional Folder Structure
+                <input type="file" id="append-input" multiple webkitdirectory directory style="display:none">
+            </button>
+
+            <!-- Configuration Card (Conditional display) -->
+            <div id="config-card" class="hidden glass rounded-2xl p-5 flex flex-col gap-4 border border-white/5">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-1">Bundle Configuration</h3>
+
+                <div class="grid grid-cols-[1fr_auto] gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-dim mb-1.5">Output Bundle Archive Name</label>
+                        <input id="release-name" type="text" oninput="updateReleasePreview()" class="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2 text-sm outline-none transition-all font-mono" placeholder="RELEASE_PRODUCT_XYZ">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-dim mb-1.5">Version Tag</label>
+                        <input id="version-tag" type="text" class="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2 text-sm outline-none transition-all font-mono text-indigo-300" placeholder="v1.0.0" style="width:90px">
+                    </div>
+                </div>
+
+                <!-- Consolidated Release Preview -->
+                <div id="release-preview-box" class="hidden rounded-xl border border-indigo-500/25 bg-indigo-500/5 px-4 py-3 mt-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Consolidated Release Preview</p>
+                            <span id="preview-count-badge" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="togglePreviewFolders()" id="preview-expand-btn" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-dim transition-all">Collapse All</button>
+                            <button onclick="copyPreviewTree()" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-dim transition-all" title="Copy tree as text">Copy</button>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2 mb-2">
+                        <span class="text-base leading-none mt-0.5">📦</span>
+                        <p id="release-preview-name" class="text-sm font-mono font-bold text-white break-all leading-snug"></p>
+                    </div>
+                    <p id="preview-file-summary" class="hidden text-[10px] text-dim mb-2 ml-6"></p>
+                    <p class="text-[9px] font-bold uppercase tracking-wider text-muted mb-1 ml-1">Output Bundle Structure</p>
+                    <div id="release-preview-tree" class="max-h-72 overflow-y-auto rounded-lg bg-black/20 border border-white/5 py-1"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-dim mb-1.5">Official Release Directory</label>
+                    <input id="official-dir" type="text" class="w-full bg-white/5 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2 text-xs outline-none transition-all font-mono text-emerald-300" placeholder="\\server\path\to\official\release\directory">
+                    <p class="text-[10px] text-muted mt-1.5">Embedded in MANIFEST.txt and summary exports</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-dim mb-1.5">Deployment Targets</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/8 transition-all">
+                            <input type="checkbox" id="dt-stdv68" class="rounded text-indigo-500 focus:ring-0" style="width:13px;height:13px">
+                            <span class="text-xs font-semibold text-dim">STD v68 Staging</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/8 transition-all">
+                            <input type="checkbox" id="dt-itochv5" class="rounded text-indigo-500 focus:ring-0" style="width:13px;height:13px">
+                            <span class="text-xs font-semibold text-dim">Itochu V5 Staging</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/8 transition-all">
+                            <input type="checkbox" id="dt-maxims" class="rounded text-indigo-500 focus:ring-0" style="width:13px;height:13px">
+                            <span class="text-xs font-semibold text-dim">Maxims V67 Staging</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/8 transition-all">
+                            <input type="checkbox" id="dt-custom-chk" class="rounded text-indigo-500 focus:ring-0" style="width:13px;height:13px">
+                            <span class="text-xs font-semibold text-dim">Other</span>
+                        </label>
+                    </div>
+                    <input id="dt-custom" type="text" class="hidden mt-2 w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2 text-xs outline-none transition-all font-mono" placeholder="Custom deployment target name...">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold text-dim">Interactive Release Log</label>
+                        <span class="text-[10px] font-mono text-muted">Outputs to RELEASE_NOTES.txt</span>
+                    </div>
+                    <textarea id="release-notes" rows="3" oninput="updateNotesPreview()" class="w-full bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2 text-sm outline-none transition-all resize-none" placeholder="Provide release patch details, bug-fixes, deployment environment prerequisites..."></textarea>
+                    <div id="notes-preview-box" class="hidden mt-2 rounded-xl border border-white/8 bg-white/3 px-3 py-2">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-muted">Live Preview</span>
+                            <div class="flex gap-1">
+                                <button onclick="setNotesPreviewFmt('slack')" id="np-slack" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-all">Slack</button>
+                                <button onclick="setNotesPreviewFmt('email')" id="np-email" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/5 text-dim border border-white/10 transition-all">Email</button>
+                            </div>
+                        </div>
+                        <pre id="notes-preview-content" class="text-[11px] font-mono text-dim whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto"></pre>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold text-dim">Custom Exclusion Patterns</label>
+                        <span class="text-[10px] font-mono text-muted">comma-separated extensions</span>
+                    </div>
+                    <input id="excl-patterns" type="text" class="w-full bg-white/5 border border-white/10 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-xl px-3.5 py-2 text-xs outline-none transition-all font-mono text-rose-300" placeholder="*.pdb, *.xml, *.log, *.map">
+                    <p class="text-[10px] text-muted mt-1.5">Applied in addition to built-in exclusions (cs, csproj, sln…)</p>
+                </div>
+            </div>
+
+            <!-- Action panel -->
+            <div class="flex flex-col gap-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="preview-btn" disabled class="btn-secondary py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="showSqlPreview()">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        Preview SQL
+                        <span class="hidden md:inline-block px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-bold ml-1">Ctrl+P</span>
+                    </button>
+                    <button id="validate-btn" disabled class="btn-secondary py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="runSqlValidation()">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Validate SQL
+                    </button>
+                </div>
+
+                <button id="export-summary-btn" disabled class="btn-secondary py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="showExportSummary()">
+                    <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    Export Release Summary (Email / Slack)
+                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="checksum-btn" disabled class="btn-secondary py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="showChecksumReport()">
+                        <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        Checksum Report
+                    </button>
+                    <button id="rollback-btn" disabled class="btn-secondary py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onclick="generateRollbackBundle()">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        Rollback Bundle
+                    </button>
+                </div>
+
+                <button id="merge-btn" disabled class="btn-primary py-3 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Generate & Download Bundle
+                    <span class="hidden md:inline-block px-1.5 py-0.5 rounded bg-black/25 text-[9px] font-bold tracking-normal ml-1 text-indigo-200">Ctrl+↵</span>
+                </button>
+            </div>
+
+            <!-- Progress Module -->
+            <div id="progress-wrap" class="hidden glass rounded-2xl p-4 flex flex-col gap-2.5 border border-indigo-500/20">
+                <div class="flex justify-between items-center text-xs">
+                    <span id="progress-label" class="font-semibold text-indigo-300 truncate pr-4">Analyzing assets...</span>
+                    <span id="progress-pct" class="font-mono font-bold text-indigo-400">0%</span>
+                </div>
+                <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
+                    <div id="pb-fill" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 w-0 transition-all duration-150 rounded-full"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Interactive Explorer -->
+        <div class="glass rounded-3xl p-5 flex flex-col border border-white/5 h-[650px] lg:h-[750px]">
+            <div class="flex items-center justify-between pb-3 border-b border-white/5 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Project File Structure</span>
+                    <span id="explorer-indicator" class="hidden text-[10px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full">Explorer Ready</span>
+                </div>
+                <div id="tree-controls" class="hidden flex items-center gap-3 text-[11px] font-semibold text-dim">
+                    <button onclick="selectAll(true)" class="hover:text-indigo-400 transition-colors">Select All</button>
+                    <span class="opacity-20">|</span>
+                    <button onclick="selectAll(false)" class="hover:text-indigo-400 transition-colors">Clear Selection</button>
+                    <span class="opacity-20">|</span>
+                    <button id="expand-btn" onclick="toggleAllFolders()" class="hover:text-indigo-400 transition-colors">Collapse All</button>
+                </div>
+            </div>
+
+            <!-- Enhanced Live Search Box -->
+            <div id="tree-search-wrap" class="hidden my-3 flex-shrink-0 relative">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-dim pointer-events-none">🔍</span>
+                <input id="tree-search" type="text" class="w-full bg-white/5 border border-white/10 focus:border-indigo-500 rounded-xl pl-9 pr-8 py-2 text-xs outline-none transition-all" placeholder="Filter directories or file types... (Ctrl+K)" oninput="filterTree(this.value)">
+                <button id="tree-search-clear" onclick="clearTreeSearch()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs opacity-0 hover:opacity-100 transition-all hover:text-indigo-400">✕</button>
+            </div>
+            <p id="tree-match-count" class="hidden text-[11px] text-indigo-300/80 mb-2 px-1"></p>
+
+            <!-- File system tree viewer container -->
+            <div id="tree-view" class="overflow-y-auto flex-1 pr-1.5 py-2 space-y-1 select-none">
+                <div class="flex flex-col items-center justify-center text-center py-24 px-6">
+                    <div class="text-4xl opacity-30 mb-4 animate-bounce">📂</div>
+                    <h4 class="text-sm font-bold opacity-60 mb-1">Explorer is empty</h4>
+                    <p class="text-xs text-dim max-w-xs">Once you upload a release directory, the smart explorer mapping will display your tree hierarchy here.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SQL Ordering Interface -->
+    <section id="sql-order-section" class="glass rounded-2xl p-5 border border-white/5 hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div onclick="toggleSqlOrder()" class="w-full flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+                <span class="text-lg">🔁</span>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">SQL Merge Sequencing</h3>
+                    <p class="text-[11px] text-dim mt-0.5">Define combined build scripts compilation stack order</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="event.stopPropagation();resetSqlOrder()" class="text-xs text-dim hover:text-indigo-400 hover:bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 transition-colors font-semibold">↺ Reset Alphabetical</button>
+                <span id="sql-order-icon" class="text-xs opacity-40 transition-transform">▼</span>
+            </div>
+        </div>
+        <div id="sql-order-body" class="collapse-body shut mt-4" style="max-height:0">
+            <div id="sql-order-list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+        </div>
+    </section>
+
+    <!-- Release Comparison -->
+    <section class="glass rounded-2xl p-5 border border-white/5">
+        <div onclick="toggleCompare()" class="w-full flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-violet-400">Release Comparison</h3>
+                    <p class="text-[11px] text-dim mt-0.5">Diff two release folder structures — see what was added, removed, or unchanged</p>
+                </div>
+            </div>
+            <span id="compare-icon" class="text-xs opacity-40 transition-transform">▼</span>
+        </div>
+        <div id="compare-body" class="collapse-body shut mt-4" style="max-height:0">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p class="text-[11px] font-bold text-dim mb-2">Baseline (Old Release)</p>
+                    <label class="drop-zone p-5 flex flex-col items-center justify-center cursor-pointer" style="min-height:90px">
+                        <svg class="w-6 h-6 text-dim mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                        <span id="cmp-a-label" class="text-xs font-semibold text-dim">Drop Baseline Folder</span>
+                        <input type="file" id="cmp-a-input" multiple webkitdirectory directory style="display:none" onchange="loadCompareSet('A',this.files)">
+                    </label>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-dim mb-2">Target (New Release)</p>
+                    <label class="drop-zone p-5 flex flex-col items-center justify-center cursor-pointer" style="min-height:90px">
+                        <svg class="w-6 h-6 text-dim mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                        <span id="cmp-b-label" class="text-xs font-semibold text-dim">Drop Target Folder</span>
+                        <input type="file" id="cmp-b-input" multiple webkitdirectory directory style="display:none" onchange="loadCompareSet('B',this.files)">
+                    </label>
+                </div>
+            </div>
+            <button id="run-compare-btn" disabled onclick="runComparison()" class="btn-secondary w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Run Diff Comparison
+            </button>
+            <div id="compare-results" class="hidden">
+                <div class="flex items-center gap-3 mb-3 flex-wrap">
+                    <span id="cmp-stat-added"   class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">0 added</span>
+                    <span id="cmp-stat-removed" class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400">0 removed</span>
+                    <span id="cmp-stat-same"    class="stat-icon px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-dim">0 unchanged</span>
+                    <button onclick="copyCmpReport()" class="ml-auto text-xs px-3 py-1.5 rounded-xl glass border border-white/10 hover:bg-white/10 transition-all font-semibold text-dim flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        Copy Report
+                    </button>
+                </div>
+                <div id="compare-table" class="flex flex-col gap-1 max-h-72 overflow-y-auto pr-1"></div>
+            </div>
+            <!-- SQL Merge Sequencing within Comparison -->
+            <div id="cmp-sql-sections" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Baseline (A) -->
+                <div id="cmp-sql-order-section-a" class="rounded-xl p-4 border border-white/10 bg-white/[0.02]">
+                    <div onclick="toggleCmpSqlOrder('a')" class="w-full flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">🔁</span>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">SQL Sequencing — Baseline</h3>
+                                <p class="text-[11px] text-dim mt-0.5">Reorder SQL files from Baseline release</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="event.stopPropagation();resetCmpSqlOrder('a')" class="text-xs text-dim hover:text-slate-300 hover:bg-white/5 px-2 py-1 rounded-lg border border-white/10 transition-colors font-semibold">↺ Reset</button>
+                            <span id="cmp-sql-order-icon-a" class="text-xs opacity-40 transition-transform">▼</span>
+                        </div>
+                    </div>
+                    <div id="cmp-sql-order-body-a" class="collapse-body shut mt-3" style="max-height:0">
+                        <div id="cmp-sql-order-list-a" class="flex flex-col gap-2"></div>
+                    </div>
+                </div>
+                <!-- Target (B) -->
+                <div id="cmp-sql-order-section-b" class="rounded-xl p-4 border border-indigo-500/20 bg-white/[0.02]">
+                    <div onclick="toggleCmpSqlOrder('b')" class="w-full flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">🔁</span>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">SQL Sequencing — Target</h3>
+                                <p class="text-[11px] text-dim mt-0.5">Reorder SQL files from Target release</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="event.stopPropagation();resetCmpSqlOrder('b')" class="text-xs text-dim hover:text-indigo-400 hover:bg-white/5 px-2 py-1 rounded-lg border border-white/10 transition-colors font-semibold">↺ Reset</button>
+                            <span id="cmp-sql-order-icon-b" class="text-xs opacity-40 transition-transform">▼</span>
+                        </div>
+                    </div>
+                    <div id="cmp-sql-order-body-b" class="collapse-body shut mt-3" style="max-height:0">
+                        <div id="cmp-sql-order-list-b" class="flex flex-col gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Deployment History -->
+    <section class="glass rounded-2xl p-5 border border-white/5">
+        <div onclick="toggleHistory()" class="w-full flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+                <span class="text-lg">📁</span>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Build Export Archives</h3>
+                    <p class="text-[11px] text-dim mt-0.5">Access history of recently bundled archive sets</p>
+                </div>
+            </div>
+            <span id="hist-icon" class="text-xs opacity-40 transition-transform">▼</span>
+        </div>
+        <div id="hist-body" class="collapse-body shut mt-4" style="max-height:0">
+            <div id="hist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <p class="text-xs text-dim italic col-span-full">No active bundles created in this local session yet.</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="relative z-10 border-t border-white/5 mt-2 py-4 px-6 flex items-center justify-between max-w-7xl mx-auto text-[11px] text-muted">
+    <span class="font-mono">Release Merger Premium <span class="text-indigo-500/60">v4.0</span></span>
+    <span class="flex items-center gap-3">
+        <span>All processing is local — no data is transmitted</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+    </span>
+    <span class="flex items-center gap-1.5">
+        <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        <span>Dev: <span class="text-indigo-400 font-semibold">Myo</span></span>
+    </span>
+</footer>
+
+<!-- Append/Replace Dialog -->
+<div id="append-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md">
+    <div class="glass p-6 max-w-sm w-full rounded-2xl border border-white/10 flex flex-col items-center">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-500/15 flex items-center justify-center text-3xl mb-4">📂</div>
+        <h3 class="font-bold text-lg mb-1.5 text-center">Merge Additional Folder</h3>
+        <p id="append-msg" class="text-xs text-dim text-center mb-6">Select whether to entirely override current files, or append structure into existing workspace assets.</p>
+        <div class="grid grid-cols-2 gap-3 w-full">
+            <button onclick="confirmReplace()" class="py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">↺ Replace</button>
+            <button onclick="confirmAppend()" class="py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/20 hover:brightness-110 transition-all">＋ Append</button>
+        </div>
+        <button onclick="closeAppendPrompt()" class="mt-4 text-xs text-dim hover:text-white transition-colors">Cancel</button>
+    </div>
+</div>
+
+<!-- Raw Combined Script View Overlay -->
+<div id="sql-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+    <div class="glass flex flex-col max-w-4xl w-full h-[85vh] rounded-3xl border border-white/10 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
+            <div>
+                <h3 class="font-bold text-base leading-none">SQL Script Manifest Pipeline</h3>
+                <p id="sql-info" class="text-xs text-dim mt-1.5">Generating compilation mapping...</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="copySql()" id="copy-sql-btn" class="text-xs px-3.5 py-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/35 rounded-xl transition-all font-semibold flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Copy Script
+                </button>
+                <button onclick="downloadSql()" class="text-xs px-3.5 py-2 bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 rounded-xl transition-all font-semibold flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Save .sql
+                </button>
+                <button onclick="closeSqlPreview()" class="text-xs px-3.5 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 font-semibold flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Dismiss
+                </button>
+            </div>
+        </div>
+        <div class="overflow-auto flex-1 bg-slate-950/40">
+            <div class="sql-wrap min-h-full p-6">
+                <div id="sql-gutter" class="sql-gutter" aria-hidden="true"></div>
+                <pre id="sql-content" class="sql-pre text-emerald-400 flex-1">Preparing preview...</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conflict Resolver Modal -->
+<div id="conflict-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div class="glass p-6 max-w-2xl w-full rounded-2xl border border-amber-500/20 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-base font-bold text-white">Conflict Resolver</h3>
+                <p class="text-[11px] text-dim mt-0.5">Choose which release version wins for each conflicting file</p>
+            </div>
+            <button onclick="closeConflictResolver()" class="text-dim hover:text-white transition-colors text-xl leading-none">×</button>
+        </div>
+        <div id="conflict-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1"></div>
+        <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-white/5">
+            <button onclick="closeConflictResolver()" class="btn-secondary text-xs font-semibold px-4 py-2 rounded-xl">Done</button>
+        </div>
+    </div>
+</div>
+
+<!-- Checksum Report Modal -->
+<div id="checksum-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div class="glass p-6 max-w-2xl w-full rounded-2xl border border-teal-500/20 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-base font-bold text-white">SHA-256 Checksum Report</h3>
+                <p id="checksum-status" class="text-[11px] text-dim mt-0.5">Computing hashes...</p>
+            </div>
+            <button onclick="document.getElementById('checksum-modal').classList.add('hidden')" class="text-dim hover:text-white transition-colors text-xl leading-none">×</button>
+        </div>
+        <pre id="checksum-content" class="flex-1 overflow-y-auto text-[11px] font-mono text-emerald-300 leading-relaxed bg-black/30 rounded-xl p-4 whitespace-pre"></pre>
+        <div class="flex gap-2 mt-4 pt-3 border-t border-white/5">
+            <button onclick="copyChecksumReport()" class="btn-secondary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Copy
+            </button>
+            <button onclick="downloadChecksumReport()" class="btn-secondary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download .txt
+            </button>
+            <button onclick="document.getElementById('checksum-modal').classList.add('hidden')" class="ml-auto btn-secondary text-xs font-semibold px-4 py-2 rounded-xl">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Help Manual -->
+<div id="help-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div class="glass p-6 max-w-md w-full rounded-2xl border border-white/10 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-500 text-lg">📦</div>
+            <div>
+                <h3 class="font-bold text-base">Release Merger Manual</h3>
+                <p class="text-xs text-indigo-400">Premium Tool Insights</p>
+            </div>
+        </div>
+        <div class="space-y-4 text-xs text-dim leading-relaxed mb-6">
+            <div class="flex gap-2.5">
+                <span class="text-lg">🚀</span>
+                <div>
+                    <strong class="text-white block mb-0.5">Workspace Loading</strong>
+                    Drop directories containing your deployment packages. The engine processes complex file systems in-memory using Webkit Directory APIs.
+                </div>
+            </div>
+            <div class="flex gap-2.5">
+                <span class="text-lg">🔁</span>
+                <div>
+                    <strong class="text-white block mb-0.5">DLL Conflict Handling</strong>
+                    The tool automatically indexes duplicate blazor libraries or DLLs from overlapping packages, color-coding won/lost versions so last loaded directory overrides prior assets.
+                </div>
+            </div>
+            <div class="flex gap-2.5">
+                <span class="text-lg">🔀</span>
+                <div>
+                    <strong class="text-white block mb-0.5">SQL Compilation Stack</strong>
+                    Adjust the sequence of multiple SQL files via Drag & Drop before merger. Combined SQL generates inside the bundle at <code class="bg-white/10 px-1 rounded">Scripts/000Scripts.sql</code>.
+                </div>
+            </div>
+            <div class="flex gap-2.5">
+                <span class="text-lg">📄</span>
+                <div>
+                    <strong class="text-white block mb-0.5">Manifest Creation</strong>
+                    Bundles also include complete automation manifests and release log indices, making DevOps tracking highly structured.
+                </div>
+            </div>
+        </div>
+        <p class="text-xs font-bold text-indigo-400 mb-2 uppercase tracking-wide">Key Shortcuts</p>
+        <div class="grid grid-cols-2 gap-2 text-xs mb-6">
+            <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                <span class="text-dim">Create Bundle</span>
+                <kbd class="px-1.5 py-0.5 rounded bg-black/35 font-mono font-semibold text-[10px] text-white">Ctrl + Enter</kbd>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                <span class="text-dim">Preview SQL</span>
+                <kbd class="px-1.5 py-0.5 rounded bg-black/35 font-mono font-semibold text-[10px] text-white">Ctrl + P</kbd>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                <span class="text-dim">Search</span>
+                <kbd class="px-1.5 py-0.5 rounded bg-black/35 font-mono font-semibold text-[10px] text-white">Ctrl + K</kbd>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                <span class="text-dim">Exit Modals</span>
+                <kbd class="px-1.5 py-0.5 rounded bg-black/35 font-mono font-semibold text-[10px] text-white">Esc</kbd>
+            </div>
+        </div>
+        <button onclick="closeHelp()" class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-500/20">
+            Acknowledge Manual
+        </button>
+    </div>
+</div>
+
+<!-- SQL Validation Modal -->
+<div id="validate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+    <div class="glass flex flex-col max-w-2xl w-full max-h-[80vh] rounded-3xl border border-white/10 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <div>
+                    <h3 class="font-bold text-base leading-none">SQL Script Validation</h3>
+                    <p id="val-info" class="text-xs text-dim mt-1">Scanning scripts...</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('validate-modal').classList.add('hidden')" class="text-xs px-3.5 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 font-semibold">✕ Close</button>
+        </div>
+        <div id="val-list" class="overflow-y-auto flex-1 p-5 flex flex-col gap-2"></div>
+    </div>
+</div>
+
+<!-- Export Summary Modal -->
+<div id="summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+    <div class="glass flex flex-col max-w-lg w-full max-h-[80vh] rounded-3xl border border-white/10 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                <h3 class="font-bold text-base">Release Summary</h3>
+            </div>
+            <button onclick="document.getElementById('summary-modal').classList.add('hidden')" class="text-xs px-3.5 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 font-semibold">✕ Close</button>
+        </div>
+        <div class="p-5 flex flex-col gap-3 overflow-y-auto flex-1">
+            <div class="flex gap-2 mb-1">
+                <button onclick="setSummaryFmt('slack')" id="fmt-slack" class="text-xs px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/30 font-semibold transition-all">Slack / Teams</button>
+                <button onclick="setSummaryFmt('email')" id="fmt-email" class="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-dim font-semibold transition-all hover:bg-white/10">Email (Plain)</button>
+                <button onclick="setSummaryFmt('md')"    id="fmt-md"    class="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-dim font-semibold transition-all hover:bg-white/10">Markdown</button>
+            </div>
+            <textarea id="summary-text" rows="12" readonly class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-emerald-300 outline-none resize-none"></textarea>
+            <button onclick="copySummary()" id="copy-summary-btn" class="btn-primary py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Copy to Clipboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Theme Engine ─────────────────────────────────────────────────────────────────
+const THEME_KEY = 'rm-theme';
+function applyTheme(t) { 
+    document.documentElement.setAttribute('data-theme', t); 
+    document.getElementById('theme-btn').textContent = t === 'light' ? '☀' : '🌙'; 
+    localStorage.setItem(THEME_KEY, t); 
+}
+function toggleTheme() { 
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); 
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+
+// ── Notification Toast Engine ───────────────────────────────────────────────────
+function toast(msg, type, ms = 4000) {
+    const icons = { s: '✓', e: '✕', i: 'ℹ' };
+    const colors = {
+        s: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
+        e: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+        i: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+    };
+    const el = document.createElement('div');
+    el.className = `p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2.5 backdrop-blur-md shadow-lg pointer-events-auto animate-in slide-in-from-bottom-2 duration-300 ${colors[type]}`;
+    el.innerHTML = `
+        <span class="w-5 h-5 rounded-full flex items-center justify-center bg-white/10 flex-shrink-0 font-mono">${icons[type]}</span>
+        <span class="flex-1">${msg}</span>
+    `;
+    const container = document.getElementById('toast-container');
+    container.appendChild(el);
+    setTimeout(() => {
+        el.className += ' animate-out fade-out slide-out-to-right-5 duration-300';
+        setTimeout(() => el.remove(), 300);
+    }, ms);
+}
+
+// ── Custom Confirmations ────────────────────────────────────────────────────────
+let currentConfirmAction = null;
+function requestConfirmation(title, message, onProceed) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const modal = document.getElementById('confirm-modal');
+    modal.classList.remove('hidden');
+    currentConfirmAction = onProceed;
+}
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    currentConfirmAction = null;
+});
+document.getElementById('confirm-proceed').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    if (currentConfirmAction) {
+        currentConfirmAction();
+        currentConfirmAction = null;
+    }
+});
+
+// ── Help Manual ──────────────────────────────────────────────────────────────────
+function showHelp()  { document.getElementById('help-modal').classList.remove('hidden'); }
+function closeHelp() { document.getElementById('help-modal').classList.add('hidden'); }
+document.getElementById('help-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHelp(); });
+
+// ── History Management ──────────────────────────────────────────────────────────
+const HIST_KEY = 'rm-history-v4';
+let histOpen = false;
+function getHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } }
+function pushHistory(entry) { 
+    const h = getHistory(); 
+    h.unshift(entry); 
+    if (h.length > 12) h.length = 12; 
+    localStorage.setItem(HIST_KEY, JSON.stringify(h)); 
+    if (histOpen) renderHistory(); 
+}
+function renderHistory() {
+    const h = getHistory(); 
+    const el = document.getElementById('hist-list');
+    if (!h.length) { 
+        el.innerHTML = '<p class="text-xs text-dim italic col-span-full">No active bundles created in this local session yet.</p>'; 
+        return; 
+    }
+    el.innerHTML = h.map(e => `
+        <div class="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl hover:border-white/10 transition-all flex flex-col justify-between gap-2">
+            <div class="flex items-start gap-2.5 min-w-0">
+                <span class="text-lg">📦</span>
+                <div class="min-w-0">
+                    <p class="text-xs font-bold truncate text-white">${e.name}</p>
+                    <p class="text-[10px] text-dim mt-0.5">${e.date}</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-white/5 border border-white/10">${e.dll} DLL</span>
+                <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">${e.sql} SQL</span>
+                ${e.folders > 1 ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${e.folders} dirs</span>` : ''}
+                ${e.mb ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${e.mb} MB</span>` : ''}
+            </div>
+        </div>`).join('');
+}
+function toggleHistory() {
+    const body = document.getElementById('hist-body'); 
+    const icon = document.getElementById('hist-icon');
+    histOpen = !histOpen;
+    if (histOpen) { 
+        body.classList.remove('shut'); 
+        body.style.maxHeight = '600px'; 
+        icon.style.transform = 'rotate(180deg)'; 
+        renderHistory(); 
+    } else { 
+        body.style.maxHeight = '0'; 
+        body.classList.add('shut'); 
+        icon.style.transform = ''; 
+    }
+}
+
+// ── State Management ─────────────────────────────────────────────────────────────
+let fileQueue    = new Map();
+let dupMap       = new Map();
+let rawFileMap   = new Map(); // rawPath → file (all versions, for DLL version reading)
+let sqlContent   = [];
+let sqlOrder     = [];
+let treeData     = {};
+let excludedRaw  = new Set();
+let allOpen      = true;
+let sqlOrderOpen = false;
+let folderCount  = 0;
+let folderNames  = [];
+let pendingFiles = [];
+let pendingFromDrop = false;
+
+// ── Deployment target "Other" toggle ──────────────────────────────────────────
+document.getElementById('dt-custom-chk').addEventListener('change', function() {
+    document.getElementById('dt-custom').classList.toggle('hidden', !this.checked);
+});
+
+function getDeploymentTargets() {
+    const targets = [];
+    if (document.getElementById('dt-stdv68').checked)   targets.push('STD v68 Staging');
+    if (document.getElementById('dt-itochv5').checked)  targets.push('Itochu V5 Staging');
+    if (document.getElementById('dt-maxims').checked)   targets.push('Maxims V67 Staging');
+    const custom = document.getElementById('dt-custom').value.trim();
+    if (document.getElementById('dt-custom-chk').checked && custom) targets.push(custom);
+    return targets;
+}
+
+const fileInput     = document.getElementById('file-input');
+const appendInput   = document.getElementById('append-input');
+const mergeBtn      = document.getElementById('merge-btn');
+const previewBtn    = document.getElementById('preview-btn');
+const treeView      = document.getElementById('tree-view');
+const dropZone      = document.getElementById('drop-zone');
+const pbFill        = document.getElementById('pb-fill');
+const progressPct   = document.getElementById('progress-pct');
+const progressLabel = document.getElementById('progress-label');
+
+// ── Dropzone Handlers ───────────────────────────────────────────────────────────
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', async e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    // Route ZIP files to the extractor before attempting folder traversal
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    const zips = droppedFiles.filter(f => f.name.toLowerCase().endsWith('.zip'));
+    if (zips.length) { await handleZipFiles(zips); return; }
+    const entries = Array.from(e.dataTransfer.items).map(i => i.webkitGetAsEntry()).filter(Boolean);
+    const files = [];
+    for (const en of entries) files.push(...await traverseEntry(en, ''));
+    if (folderCount > 0) {
+        pendingFiles = files;
+        pendingFromDrop = true;
+        showAppendPrompt(files.length);
+    } else {
+        processFiles(files, true, false);
+    }
+});
+
+// ── ZIP extraction helpers ──────────────────────────────────────────────────────
+async function extractZipToFiles(zipFile) {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(zipFile);
+    const files = [];
+    await Promise.all(Object.entries(zip.files).map(async ([relativePath, entry]) => {
+        if (entry.dir) return;
+        const blob = await entry.async('blob');
+        const name = relativePath.split('/').pop();
+        const lastMod = entry.date ? entry.date.getTime() : Date.now();
+        const f = new File([blob], name, { lastModified: lastMod });
+        f._vpath = relativePath;
+        files.push(f);
+    }));
+    return files;
+}
+
+async function handleZipFiles(zipFiles) {
+    const allFiles = [];
+    for (const zf of zipFiles) {
+        toast(`Extracting ${zf.name}…`, 'i');
+        try {
+            allFiles.push(...await extractZipToFiles(zf));
+        } catch (err) {
+            toast(`Failed to read ${zf.name}: ${err.message}`, 'e');
+        }
+    }
+    if (!allFiles.length) { toast('No usable files found in ZIP', 'w'); return; }
+    if (folderCount > 0) {
+        pendingFiles = allFiles;
+        pendingFromDrop = true;
+        showAppendPrompt(allFiles.length);
+    } else {
+        processFiles(allFiles, true, false);
+    }
+}
+
+async function traverseEntry(entry, base) {
+    if (entry.isFile) { 
+        const f = await new Promise(res => entry.file(res)); 
+        f._vpath = base + entry.name; 
+        return [f]; 
+    }
+    if (entry.isDirectory) {
+        const rdr = entry.createReader(); 
+        const ents = [];
+        await new Promise(res => { 
+            (function rd() { 
+                rdr.readEntries(b => { 
+                    if (!b.length) return res(); 
+                    ents.push(...b); 
+                    rd(); 
+                }); 
+            })(); 
+        });
+        const out = [];
+        for (const e of ents) out.push(...await traverseEntry(e, base + entry.name + '/'));
+        return out;
+    }
+    return [];
+}
+
+fileInput.onchange = e => {
+    const files = Array.from(e.target.files); 
+    fileInput.value = '';
+    if (folderCount > 0) { 
+        pendingFiles = files; 
+        pendingFromDrop = false; 
+        showAppendPrompt(files.length); 
+    } else {
+        processFiles(files, false, false);
+    }
+};
+appendInput.onchange = e => {
+    const files = Array.from(e.target.files);
+    appendInput.value = '';
+    processFiles(files, false, true);
+};
+document.getElementById('zip-input').onchange = async e => {
+    const files = Array.from(e.target.files);
+    document.getElementById('zip-input').value = '';
+    await handleZipFiles(files);
+};
+
+// ── Append modal actions ──────────────────────────────────────────────────────────
+function showAppendPrompt(count) {
+    document.getElementById('append-msg').textContent = `${count} files detected. Create a fresh workspace, or append files recursively into existing package structures?`;
+    document.getElementById('append-modal').classList.remove('hidden');
+}
+function closeAppendPrompt() { 
+    document.getElementById('append-modal').classList.add('hidden'); 
+    pendingFiles = []; 
+    pendingFromDrop = false; 
+}
+function confirmReplace() { 
+    const f = pendingFiles, d = pendingFromDrop; 
+    closeAppendPrompt(); 
+    processFiles(f, d, false); 
+}
+function confirmAppend() { 
+    const f = pendingFiles, d = pendingFromDrop; 
+    closeAppendPrompt(); 
+    processFiles(f, d, true); 
+}
+
+function autoSetBundleName() {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateStr = yy + mm + dd;
+
+    const tagMatch = folderNames.map(n => n.match(/\[([^\]]+)\]/)).find(Boolean);
+    const tag = tagMatch ? tagMatch[0] : '';
+
+    const versions = folderNames.map(n => { const m = n.match(/\d+\.\d+\.\d+\.\d+/); return m ? m[0] : null; }).filter(Boolean)
+        .sort((a, b) => { const pa = a.split('.').map(Number), pb = b.split('.').map(Number); for (let i = 0; i < 4; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i]; return 0; });
+    const versionRange = versions.length === 0 ? '' :
+                         versions.length === 1 ? `[${versions[0]}]` :
+                         `[${versions[0]} - ${versions[versions.length - 1]}]`;
+
+    const parts = [dateStr, tag, 'Consolidated Scripts', versionRange].filter(Boolean);
+    document.getElementById('release-name').value = parts.join(' ');
+    updateReleasePreview();
+}
+
+function buildOutputTree() {
+    const out = {};
+    for (const [cleanPath, { rawPath }] of fileQueue.entries()) {
+        if (excludedRaw.has(rawPath)) continue;
+        const parts = cleanPath.split('/');
+        let cur = out;
+        parts.forEach((p, i) => {
+            if (i === parts.length - 1) { cur[p] = null; }
+            else { if (!cur[p]) cur[p] = {}; cur = cur[p]; }
+        });
+    }
+    const activeSql = sqlContent.filter(s => !excludedRaw.has(s.path));
+    if (activeSql.length > 0) {
+        if (!out['Scripts']) out['Scripts'] = {};
+        out['Scripts']['000Scripts.sql'] = null;
+    }
+    return out;
+}
+
+function updateReleasePreview() {
+    const name = document.getElementById('release-name').value.trim();
+    const box = document.getElementById('release-preview-box');
+    if (!name && folderNames.length === 0) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    document.getElementById('release-preview-name').textContent = name || '—';
+
+    const dllCount = [...fileQueue.entries()].filter(([, {rawPath}]) => !excludedRaw.has(rawPath)).length;
+    const sqlCount = sqlContent.filter(s => !excludedRaw.has(s.path)).length;
+    const total = dllCount + sqlCount;
+
+    const badge = document.getElementById('preview-count-badge');
+    if (total > 0) { badge.textContent = total + ' files'; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+
+    const summaryEl = document.getElementById('preview-file-summary');
+    const summaryParts = [];
+    if (dllCount > 0) summaryParts.push(dllCount + ' DLL');
+    if (sqlCount > 0) summaryParts.push(sqlCount + ' SQL script' + (sqlCount > 1 ? 's' : ''));
+    if (summaryParts.length > 0) { summaryEl.textContent = summaryParts.join(' · '); summaryEl.classList.remove('hidden'); }
+    else { summaryEl.classList.add('hidden'); }
+
+    const treeEl = document.getElementById('release-preview-tree');
+    treeEl.innerHTML = '';
+    const outputTree = buildOutputTree();
+    if (Object.keys(outputTree).length > 0) renderPreviewTree(outputTree, treeEl);
+}
+
+let previewAllOpen = true;
+
+function renderPreviewTree(obj, container) {
+    const keys = Object.keys(obj).sort((a, b) => {
+        const aF = obj[a] !== null, bF = obj[b] !== null;
+        if (aF !== bF) return aF ? -1 : 1;
+        return a.localeCompare(b);
+    });
+    for (const key of keys) {
+        const isFolder = obj[key] !== null;
+        const node = document.createElement('div');
+        node.className = 'tree-node';
+
+        const row = document.createElement('div');
+        row.className = 'tree-row' + (isFolder ? ' is-folder' : '');
+
+        const isScripts = isFolder && key.toLowerCase() === 'scripts';
+
+        const iconEl = document.createElement('span');
+        iconEl.style.cssText = 'font-size:11px;flex-shrink:0;line-height:1;margin-left:2px;';
+        iconEl.className = 'node-icon text-dim transition-transform';
+        iconEl.textContent = isFolder ? '▼' : '';
+        if (isFolder) iconEl.style.color = isScripts ? '#34d399' : 'var(--accent)';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = isFolder ? 'tree-label tree-folder-label' : 'tree-label';
+        labelEl.textContent = key;
+        labelEl.style.flex = '1';
+        if (isScripts) { labelEl.style.color = '#34d399'; row.style.background = 'rgba(52,211,153,0.06)'; row.style.borderRadius = '6px'; }
+
+        row.append(iconEl, labelEl);
+
+        if (isFolder) {
+            const cnt = countChildren(obj[key]);
+            const cntEl = document.createElement('span');
+            cntEl.className = 'text-[10px] font-mono text-dim opacity-75';
+            cntEl.textContent = `${cnt} item${cnt === 1 ? '' : 's'}`;
+            row.appendChild(cntEl);
+        } else {
+            row.appendChild(document.createRange().createContextualFragment(extBadge(key)));
+        }
+
+        node.appendChild(row);
+
+        if (isFolder) {
+            const indent = document.createElement('div');
+            indent.className = 'tree-indent'; // start expanded
+            renderPreviewTree(obj[key], indent);
+            node.appendChild(indent);
+            row.addEventListener('click', () => {
+                const isNowCollapsed = indent.classList.toggle('collapsed');
+                iconEl.textContent = isNowCollapsed ? '▶' : '▼';
+                iconEl.style.color = isNowCollapsed ? '' : (isScripts ? '#34d399' : 'var(--accent)');
+            });
+        }
+
+        container.appendChild(node);
+    }
+}
+
+function togglePreviewFolders() {
+    previewAllOpen = !previewAllOpen;
+    const treeEl = document.getElementById('release-preview-tree');
+    treeEl.querySelectorAll('.tree-indent').forEach(el => el.classList.toggle('collapsed', !previewAllOpen));
+    treeEl.querySelectorAll('.node-icon').forEach(ic => {
+        if (ic.textContent === '▼' || ic.textContent === '▶') {
+            ic.textContent = previewAllOpen ? '▼' : '▶';
+            ic.style.color = previewAllOpen ? 'var(--accent)' : '';
+        }
+    });
+    document.getElementById('preview-expand-btn').textContent = previewAllOpen ? 'Collapse All' : 'Expand All';
+}
+
+function copyPreviewTree() {
+    const name = document.getElementById('release-preview-name').textContent || '';
+    const lines = [name];
+    function walk(obj, prefix) {
+        const keys = Object.keys(obj).sort((a, b) => {
+            const aF = obj[a] !== null, bF = obj[b] !== null;
+            if (aF !== bF) return aF ? -1 : 1;
+            return a.localeCompare(b);
+        });
+        keys.forEach((key, i) => {
+            const last = i === keys.length - 1;
+            const connector = last ? '└── ' : '├── ';
+            const childPrefix = last ? '    ' : '│   ';
+            if (obj[key] !== null) {
+                const cnt = countChildren(obj[key]);
+                lines.push(prefix + connector + key + '/ (' + cnt + ' item' + (cnt === 1 ? '' : 's') + ')');
+                walk(obj[key], prefix + childPrefix);
+            } else {
+                lines.push(prefix + connector + key);
+            }
+        });
+    }
+    walk(buildOutputTree(), '');
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+        const btn = event.currentTarget;
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.color = '#34d399';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+    });
+}
+
+// ── Core File Processing Engine ──────────────────────────────────────────────────
+const EXCL_EXT  = new Set(['cs','csproj','sln','vbproj','config','xlsx','docx','pdf','txt','md']);
+const EXCL_PATH = /\/(Source\s*Code|SourceCode)\//i;
+
+function processFiles(files, fromDrop, append) {
+    const allPaths = files.map(f => fromDrop ? (f._vpath || f.name) : f.webkitRelativePath).filter(Boolean);
+    const level0 = [...new Set(allPaths.map(p => p.split('/')[0]).filter(Boolean))];
+    const level1 = [...new Set(allPaths.map(p => p.split('/')[1]).filter(Boolean))];
+    // If a single container folder holds sub-folders, use sub-folder names as release names
+    const detectedFolders = (level0.length === 1 && level1.length > 0) ? level1 : level0;
+    const rootFolder = level0[0] || '';
+
+    if (!append) {
+        fileQueue.clear();
+        dupMap.clear();
+        rawFileMap.clear();
+        sqlContent = [];
+        sqlOrder = [];
+        treeData = {};
+        excludedRaw.clear();
+        folderCount = 0;
+        folderNames = [];
+
+    }
+
+    detectedFolders.forEach(n => { if (n && !folderNames.includes(n)) folderNames.push(n); });
+    if (!append) autoSetBundleName();
+
+    // ── Feature: Merge custom exclusion patterns into EXCL_EXT ──
+    const userExcl = (document.getElementById('excl-patterns')?.value || '')
+        .split(',').map(s => s.trim().replace(/^\*\./, '').toLowerCase()).filter(Boolean);
+    userExcl.forEach(e => EXCL_EXT.add(e));
+
+    let addedSql = 0;
+    for (const file of files) {
+        const rawPath = fromDrop ? (file._vpath || file.name) : file.webkitRelativePath;
+        if (!rawPath) continue;
+        if (EXCL_PATH.test('/' + rawPath)) continue;
+
+        const ext = rawPath.split('.').pop().toLowerCase();
+        if (EXCL_EXT.has(ext)) continue;
+        if (rawPath.split('/').pop().toLowerCase() === '000scripts.sql') continue;
+
+        if (ext === 'sql') {
+            if (!sqlContent.some(s => s.path === rawPath)) {
+                sqlContent.push({ path: rawPath, file });
+                addedSql++;
+            }
+        } else {
+            const m = rawPath.match(/(MecWise\.(Blazor|Toolkit)|Websites)\//i);
+            if (!m) continue;
+            const cleanPath = rawPath.substring(m.index);
+            if (!dupMap.has(cleanPath)) dupMap.set(cleanPath, []);
+            if (!dupMap.get(cleanPath).includes(rawPath)) dupMap.get(cleanPath).push(rawPath);
+            fileQueue.set(cleanPath, { file, rawPath });
+            rawFileMap.set(rawPath, file); // store every version by rawPath
+        }
+
+        const parts = rawPath.split('/');
+        let cur = treeData;
+        parts.forEach((p, i) => { 
+            if (i === parts.length - 1) {
+                cur[p] = null; 
+            } else { 
+                if (!cur[p]) cur[p] = {}; 
+                cur = cur[p]; 
+            } 
+        });
+    }
+
+    folderCount++;
+
+    if (append) {
+        const existing = new Set(sqlOrder);
+        const newPaths = sqlContent.filter(s => !existing.has(s.path)).sort((a, b) => a.path.localeCompare(b.path)).map(s => s.path);
+        sqlOrder = [...sqlOrder, ...newPaths];
+    } else {
+        sqlOrder = [...sqlContent].sort((a, b) => a.path.localeCompare(b.path)).map(s => s.path);
+    }
+
+    treeView.innerHTML = '';
+    buildTree(treeData, treeView, 0, '');
+    loadDllVersions(); // async — fills version badges without blocking UI
+    updateReleasePreview();
+
+    const total = fileQueue.size + sqlContent.length;
+    const dupCount = [...dupMap.values()].filter(v => v.length > 1).length;
+
+    // Set stats info
+    document.getElementById('stat-total').textContent  = total + (total === 1 ? ' file' : ' files');
+    document.getElementById('stat-blazor').textContent = fileQueue.size + ' DLL';
+    document.getElementById('stat-sql').textContent    = sqlContent.length + ' SQL';
+
+    const folderBadge = document.getElementById('stat-folders');
+    if (folderCount > 1) { 
+        folderBadge.textContent = folderCount + ' folders'; 
+        folderBadge.classList.remove('hidden'); 
+    } else {
+        folderBadge.classList.add('hidden');
+    }
+
+    document.getElementById('stat-excl').classList.add('hidden');
+    const dupBadge = document.getElementById('stat-dup');
+    if (dupCount > 0) { 
+        dupBadge.textContent = dupCount + (dupCount === 1 ? ' conflict' : ' conflicts'); 
+        dupBadge.classList.remove('hidden'); 
+    } else {
+        dupBadge.classList.add('hidden');
+    }
+
+    // Remove user exclusions after processing (keep EXCL_EXT clean)
+    userExcl.forEach(e => EXCL_EXT.delete(e));
+
+    // Toggle UI blocks
+    ['stats-bar','config-card','tree-controls','tree-search-wrap','explorer-indicator'].forEach(id => {
+        document.getElementById(id).classList.remove('hidden');
+    });
+
+    document.getElementById('add-more-btn').classList.remove('hidden');
+    dropZone.classList.add('has-files');
+    document.getElementById('drop-label').textContent = total + ' deployment files loaded';
+    document.getElementById('dz-icon').innerHTML = `<svg class="w-7 h-7 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
+    mergeBtn.disabled = total === 0;
+    previewBtn.disabled = sqlContent.length === 0;
+    document.getElementById('validate-btn').disabled = sqlContent.length === 0;
+    document.getElementById('export-summary-btn').disabled = total === 0;
+    document.getElementById('checksum-btn').disabled = total === 0;
+    document.getElementById('rollback-btn').disabled = [...dupMap.values()].filter(v => v.length > 1).length === 0;
+    allOpen = true;
+    document.getElementById('expand-btn').textContent = 'Collapse All';
+
+    if (sqlContent.length > 0) {
+        document.getElementById('sql-order-section').classList.remove('hidden');
+        renderSqlOrder();
+    } else {
+        document.getElementById('sql-order-section').classList.add('hidden');
+    }
+
+    const msg = append ? `＋ Appended Workspace (${folderCount} directory branches, ${total} files)` : `Loaded ${total} project files`;
+    toast(msg + (dupCount ? ` · Overlapped ${dupCount} dynamic libraries` : ''), dupCount ? 'i' : 's');
+}
+
+function askClearAll() {
+    requestConfirmation(
+        "Reset Active Workspace?",
+        "This will clear all files currently queued, loaded directories, modifications to SQL sequences, and clean input states.",
+        clearAll
+    );
+}
+
+function clearAll() {
+    fileQueue.clear();
+    dupMap.clear();
+    rawFileMap.clear();
+    sqlContent = [];
+    sqlOrder = [];
+    treeData = {};
+    excludedRaw.clear();
+    folderCount = 0;
+    folderNames = [];
+    document.getElementById('release-preview-box').classList.add('hidden');
+
+    treeView.innerHTML = `
+        <div class="flex flex-col items-center justify-center text-center py-24 px-6 animate-fade-in">
+            <div class="text-4xl opacity-30 mb-4">📂</div>
+            <h4 class="text-sm font-bold opacity-60 mb-1">Explorer is empty</h4>
+            <p class="text-xs text-dim max-w-xs">Once you upload a release directory, the smart explorer mapping will display your tree hierarchy here.</p>
+        </div>
+    `;
+    
+    ['stats-bar','config-card','progress-wrap','tree-controls','tree-search-wrap','sql-order-section','add-more-btn','explorer-indicator'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    
+    clearTreeSearch();
+    dropZone.classList.remove('has-files');
+    document.getElementById('drop-label').textContent = 'Upload Release Directory';
+    document.getElementById('dz-icon').innerHTML = `<svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>`;
+    _versionLoadId++; // cancel any in-progress DLL version reads
+    mergeBtn.disabled = true;
+    previewBtn.disabled = true;
+    document.getElementById('validate-btn').disabled = true;
+    document.getElementById('export-summary-btn').disabled = true;
+    document.getElementById('checksum-btn').disabled = true;
+    document.getElementById('rollback-btn').disabled = true;
+    toast("Workspace reset successful", "i");
+}
+
+// ── Smart Explorer Tree ────────────────────────────────────────────────────────
+function extBadge(f) {
+    const e = f.split('.').pop().toLowerCase();
+    if (e === 'sql') return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">SQL</span>`;
+    if (e === 'dll') return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">DLL</span>`;
+    return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/5 border border-white/10 text-dim">${e.toUpperCase()}</span>`;
+}
+function countChildren(obj) { 
+    let n = 0; 
+    for (const k in obj) { 
+        if (obj[k] === null) n++; 
+        else n += countChildren(obj[k]); 
+    } 
+    return n; 
+}
+
+function buildTree(obj, container, depth, prefix) {
+    const keys = Object.keys(obj).sort((a, b) => { 
+        const aF = obj[a] !== null, bF = obj[b] !== null; 
+        if (aF !== bF) return aF ? -1 : 1; 
+        return a.localeCompare(b); 
+    });
+    
+    for (const key of keys) {
+        const fullPath = prefix ? prefix + '/' + key : key;
+        const isFolder = obj[key] !== null;
+        const node = document.createElement('div'); 
+        node.className = 'tree-node';
+        
+        const row = document.createElement('div'); 
+        row.className = 'tree-row' + (isFolder ? ' is-folder' : '');
+        row.dataset.label = key.toLowerCase(); 
+        if (isFolder) row.dataset.folder = '1';
+
+        const cb = document.createElement('input'); 
+        cb.type = 'checkbox'; 
+        cb.checked = true;
+        cb.className = 'rounded text-indigo-600 focus:ring-0';
+        cb.style.cssText = 'width:14px;height:14px;margin:0;'; 
+        cb.addEventListener('click', e => e.stopPropagation());
+
+        const iconEl = document.createElement('span');
+        iconEl.style.cssText = 'font-size:11px;flex-shrink:0;line-height:1;margin-left:2px;'; 
+        iconEl.className = 'node-icon text-dim transition-transform';
+        iconEl.textContent = isFolder ? '▶' : '';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = isFolder ? 'tree-label tree-folder-label' : 'tree-label';
+        labelEl.textContent = key; 
+        labelEl.dataset.orig = key; 
+        labelEl.style.flex = '1';
+
+        row.append(cb, iconEl, labelEl);
+
+        if (isFolder) {
+            const cnt = countChildren(obj[key]); 
+            const cntEl = document.createElement('span');
+            cntEl.className = 'text-[10px] font-mono text-dim opacity-75'; 
+            cntEl.textContent = `${cnt} item${cnt === 1 ? '' : 's'}`; 
+            row.appendChild(cntEl);
+        } else {
+            const blazorM = fullPath.match(/(MecWise\.(Blazor|Toolkit)|Websites)\//i);
+            if (blazorM) {
+                const cleanPath = fullPath.substring(blazorM.index);
+                const sources = dupMap.get(cleanPath);
+                if (sources && sources.length > 1) {
+                    const isWinner = fileQueue.get(cleanPath)?.rawPath === fullPath;
+                    row.classList.add(isWinner ? 'dup-winner' : 'dup-loser');
+                    const tag = document.createElement('span');
+                    tag.className = 'conflict-tag px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase ' + (isWinner ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20');
+                    tag.textContent = isWinner ? 'Winner' : 'Replaced';
+                    row.appendChild(tag);
+                }
+                // Tag every DLL row so loadDllVersions() can find it
+                if (key.toLowerCase().endsWith('.dll')) {
+                    row.setAttribute('data-dll', cleanPath);
+                    row.setAttribute('data-raw-path', fullPath); // for per-row version reading
+                }
+            }
+            const extEl = document.createElement('span');
+            extEl.className = 'tree-count';
+            extEl.innerHTML = extBadge(key);
+            row.appendChild(extEl);
+            // Version + Date Modified placeholders for DLL files
+            if (key.toLowerCase().endsWith('.dll') && row.hasAttribute('data-dll')) {
+                const verEl = document.createElement('span');
+                verEl.className = 'dll-ver loading';
+                verEl.textContent = '···';
+                row.appendChild(verEl);
+                const dateEl = document.createElement('span');
+                dateEl.className = 'dll-date loading';
+                dateEl.textContent = '···';
+                row.appendChild(dateEl);
+            }
+        }
+
+        node.appendChild(row);
+
+        if (isFolder) {
+            const indent = document.createElement('div'); 
+            indent.className = 'tree-indent';
+            buildTree(obj[key], indent, depth + 1, fullPath); 
+            node.appendChild(indent);
+            
+            let open = true;
+            row.addEventListener('click', () => { 
+                open = !open; 
+                indent.classList.toggle('collapsed', !open); 
+                iconEl.textContent = open ? '▼' : '▶'; 
+                iconEl.style.color = open ? 'var(--accent)' : ''; 
+            });
+            iconEl.textContent = '▼'; 
+            iconEl.style.color = 'var(--accent)';
+            
+            cb.addEventListener('change', () => { 
+                indent.querySelectorAll('input[type=checkbox]').forEach(c => { 
+                    c.checked = cb.checked; 
+                    if (c.dataset.raw) { 
+                        cb.checked ? excludedRaw.delete(c.dataset.raw) : excludedRaw.add(c.dataset.raw); 
+                    } 
+                }); 
+                syncExclUI(); 
+            });
+        } else {
+            cb.dataset.raw = fullPath;
+            cb.addEventListener('change', () => { 
+                cb.checked ? excludedRaw.delete(fullPath) : excludedRaw.add(fullPath); 
+                syncExclUI(); 
+            });
+        }
+        container.appendChild(node);
+    }
+}
+
+function syncExclUI() { 
+    const b = document.getElementById('stat-excl'); 
+    if (excludedRaw.size > 0) { 
+        b.textContent = excludedRaw.size + ' excluded'; 
+        b.classList.remove('hidden'); 
+    } else {
+        b.classList.add('hidden'); 
+    }
+}
+
+function selectAll(on) { 
+    excludedRaw.clear(); 
+    treeView.querySelectorAll('input[type=checkbox]').forEach(cb => { 
+        cb.checked = on; 
+        if (!on && cb.dataset.raw) excludedRaw.add(cb.dataset.raw); 
+    }); 
+    syncExclUI(); 
+}
+
+function toggleAllFolders() {
+    allOpen = !allOpen;
+    treeView.querySelectorAll('.tree-indent').forEach(el => el.classList.toggle('collapsed', !allOpen));
+    treeView.querySelectorAll('.node-icon').forEach(ic => { 
+        if (ic.textContent === '▼' || ic.textContent === '▶') { 
+            ic.textContent = allOpen ? '▼' : '▶'; 
+            ic.style.color = allOpen ? 'var(--accent)' : ''; 
+        } 
+    });
+    document.getElementById('expand-btn').textContent = allOpen ? 'Collapse All' : 'Expand All';
+}
+
+// ── Tree Real-time Queries ───────────────────────────────────────────────────
+function escHtml(s) { 
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
+}
+
+function filterTree(query) {
+    const q = query.toLowerCase().trim();
+    document.getElementById('tree-search-clear').style.opacity = q ? '1' : '0';
+    treeView.querySelectorAll('[data-orig]').forEach(el => { el.textContent = el.dataset.orig; });
+    treeView.querySelectorAll('.tree-node').forEach(n => { n.style.display = ''; });
+    const countEl = document.getElementById('tree-match-count');
+    
+    if (!q) { 
+        countEl.classList.add('hidden'); 
+        return; 
+    }
+    
+    let matches = 0;
+    function applyNode(node) {
+        const row = node.querySelector(':scope > .tree-row'); 
+        const indent = node.querySelector(':scope > .tree-indent');
+        if (!row) return false;
+        
+        if (row.dataset.folder) {
+            let any = false; 
+            if (indent) indent.querySelectorAll(':scope > .tree-node').forEach(c => { 
+                if (applyNode(c)) any = true; 
+            });
+            node.style.display = any ? '' : 'none';
+            if (any) { 
+                indent && indent.classList.remove('collapsed'); 
+                const ic = row.querySelector('.node-icon'); 
+                if (ic) { 
+                    ic.textContent = '▼'; 
+                    ic.style.color = 'var(--accent)'; 
+                } 
+            }
+            return any;
+        } else {
+            const lbl = row.querySelector('.tree-label'); 
+            const orig = (lbl && lbl.dataset.orig) || '';
+            const hit = orig.toLowerCase().includes(q); 
+            node.style.display = hit ? '' : 'none';
+            if (hit && lbl) { 
+                matches++; 
+                const idx = orig.toLowerCase().indexOf(q); 
+                lbl.innerHTML = escHtml(orig.slice(0,idx)) + `<mark class="bg-amber-400 text-slate-900 font-bold px-0.5 rounded">${escHtml(orig.slice(idx, idx+q.length))}</mark>` + escHtml(orig.slice(idx+q.length)); 
+            }
+            return hit;
+        }
+    }
+    treeView.querySelectorAll(':scope > .tree-node').forEach(applyNode);
+    countEl.textContent = `Found ${matches} relative item${matches !== 1 ? 's' : ''}`; 
+    countEl.classList.remove('hidden');
+}
+
+function clearTreeSearch() { 
+    const inp = document.getElementById('tree-search'); 
+    inp.value = ''; 
+    filterTree(''); 
+}
+
+// ── SQL Ordering Draggables ───────────────────────────────────────────────────────
+function toggleSqlOrder() {
+    const body = document.getElementById('sql-order-body'); 
+    const icon = document.getElementById('sql-order-icon');
+    sqlOrderOpen = !sqlOrderOpen;
+    if (sqlOrderOpen) { 
+        body.classList.remove('shut'); 
+        body.style.maxHeight = '800px'; 
+        icon.style.transform = 'rotate(180deg)'; 
+    } else { 
+        body.style.maxHeight = '0'; 
+        body.classList.add('shut'); 
+        icon.style.transform = ''; 
+    }
+}
+
+function renderSqlOrder() {
+    const list = document.getElementById('sql-order-list'); 
+    list.innerHTML = '';
+    
+    sqlOrder.forEach((rawPath, idx) => {
+        const fname = rawPath.split('/').pop(); 
+        const item = document.createElement('div');
+        item.className = 'sql-order-item'; 
+        item.draggable = true; 
+        item.dataset.path = rawPath;
+        
+        item.innerHTML = `
+            <span class="text-xs select-none opacity-40 hover:opacity-100 cursor-grab">⠿</span>
+            <span class="text-[10px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded text-indigo-300">${String(idx+1).padStart(2,'0')}</span>
+            <span class="text-xs truncate text-slate-300 font-mono flex-1" title="${rawPath}">${fname}</span>
+        `;
+        
+        item.addEventListener('dragstart', e => { 
+            e.dataTransfer.effectAllowed = 'move'; 
+            e.dataTransfer.setData('text/plain', rawPath); 
+            setTimeout(() => item.classList.add('dragging'), 0); 
+        });
+        
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        
+        item.addEventListener('dragover', e => { 
+            e.preventDefault(); 
+            list.querySelectorAll('.sql-order-item').forEach(i => i.classList.remove('drag-over')); 
+            item.classList.add('drag-over'); 
+        });
+        
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+        
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            const rawDragPath = e.dataTransfer.getData('text/plain');
+            if (rawDragPath === rawPath) return;
+            
+            const fi = sqlOrder.indexOf(rawDragPath);
+            const ti = sqlOrder.indexOf(rawPath); 
+            if (fi === -1 || ti === -1) return;
+            
+            sqlOrder.splice(fi, 1); 
+            sqlOrder.splice(ti, 0, rawDragPath); 
+            renderSqlOrder();
+        });
+        list.appendChild(item);
+    });
+}
+function resetSqlOrder() { 
+    sqlOrder = [...sqlContent].sort((a,b) => a.path.localeCompare(b.path)).map(s => s.path); 
+    renderSqlOrder(); 
+    toast('SQL execution order reset to alphabetical sequence', 'i'); 
+}
+
+// ── SQL Syntax Highlighter Parser ─────────────────────────────────────────────
+const SQL_KW = /\b(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|FULL|ON|AND|OR|NOT|IN|IS|NULL|AS|SET|INTO|VALUES|TABLE|INDEX|VIEW|PROCEDURE|PROC|FUNCTION|BEGIN|END|IF|ELSE|WHILE|RETURN|EXEC|EXECUTE|GO|USE|WITH|HAVING|GROUP|ORDER|BY|DISTINCT|TOP|EXISTS|UNION|ALL|CAST|CONVERT|DECLARE|CHAR|VARCHAR|NVARCHAR|NCHAR|INT|BIGINT|SMALLINT|TINYINT|DATETIME|DATE|BIT|FLOAT|DECIMAL|NUMERIC|MONEY|UNIQUEIDENTIFIER|CONSTRAINT|PRIMARY|FOREIGN|KEY|REFERENCES|DEFAULT|IDENTITY|NOCOUNT|TRANSACTION|COMMIT|ROLLBACK|GRANT|REVOKE|SCHEMA|COLLATE|COUNT|SUM|AVG|MIN|MAX|ISNULL|COALESCE|CASE|WHEN|THEN|PRINT|RAISERROR|TRY|CATCH|THROW|TRUNCATE|MERGE|OUTPUT|CURSOR|FETCH|OPEN|CLOSE|DEALLOCATE|TRIGGER|AFTER|INSTEAD|DISABLE|ENABLE|STATISTICS)\b/gi;
+
+function highlightSql(code) {
+    const segs = [];
+    let i = 0;
+    while (i < code.length) {
+        if (code[i] === '/' && code[i+1] === '*' && code.indexOf('═', i) < i + 5) {
+            const end = code.indexOf('*/', i + 2); 
+            if (end !== -1) { 
+                segs.push({ t:'src', v: code.slice(i, end+2) }); 
+                i = end+2; 
+                continue; 
+            }
+        }
+        if (code[i] === '/' && code[i+1] === '*') {
+            const end = code.indexOf('*/', i+2); 
+            if (end !== -1) { 
+                segs.push({ t:'cmt', v: code.slice(i, end+2) }); 
+                i = end+2; 
+                continue; 
+            }
+        }
+        if (code[i] === '-' && code[i+1] === '-') {
+            const eol = code.indexOf('\n', i); 
+            const end = eol === -1 ? code.length : eol;
+            segs.push({ t:'cmt', v: code.slice(i, end) }); 
+            i = end; 
+            continue;
+        }
+        if (code[i] === "'") {
+            let j = i+1; 
+            while (j < code.length) { 
+                if (code[j] === "'" && code[j+1] === "'") j += 2; 
+                else if (code[j] === "'") { j++; break; } 
+                else j++; 
+            }
+            segs.push({ t:'str', v: code.slice(i, j) }); 
+            i = j; 
+            continue;
+        }
+        let j = i; 
+        while (j < code.length && code[j] !== '/' && code[j] !== '-' && code[j] !== "'") j++;
+        if (j === i) j++;
+        segs.push({ t:'plain', v: code.slice(i, j) }); 
+        i = j;
+    }
+    return segs.map(s => {
+        const h = escHtml(s.v);
+        if (s.t === 'src')   return `<span class="hl-src">${h}</span>`;
+        if (s.t === 'cmt')   return `<span class="hl-comment">${h}</span>`;
+        if (s.t === 'str')   return `<span class="hl-string">${h}</span>`;
+        return h.replace(SQL_KW, m => `<span class="hl-kw">${m}</span>`)
+                .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="hl-num">$1</span>');
+    }).join('');
+}
+
+// ── SQL Preview Controller ────────────────────────────────────────────────────
+let sqlPreviewText = '';
+async function showSqlPreview() {
+    const modal = document.getElementById('sql-modal');
+    const pre   = document.getElementById('sql-content');
+    const info  = document.getElementById('sql-info');
+    modal.classList.remove('hidden');
+    pre.textContent = 'Formatting syntax segments...'; 
+    info.textContent = 'Analyzing script indices...';
+
+    const activeSql = getOrderedSql();
+    if (!activeSql.length) { 
+        pre.textContent = '— Workspace active SQL query sequence is currently empty —'; 
+        info.textContent = 'Ensure at least one SQL file is selected'; 
+        return; 
+    }
+
+    const parts = []; 
+    let totalLines = 0;
+    for (const s of activeSql) {
+        try {
+            const txt = await readText(s.file);
+            parts.push('/* ' + '═'.repeat(54) + '\n   COMPILED: ' + s.path + '\n   ' + '═'.repeat(54) + ' */\n' + txt);
+            totalLines += txt.split('\n').length + 3;
+        } catch { 
+            parts.push(`/* ERROR reading asset index: ${s.path} */`); 
+        }
+    }
+    sqlPreviewText = parts.join('\n\n');
+    pre.innerHTML = highlightSql(sqlPreviewText);
+
+    // Build line-number gutter
+    const lineCount = sqlPreviewText.split('\n').length;
+    const gutter = document.getElementById('sql-gutter');
+    gutter.innerHTML = Array.from({ length: lineCount }, (_, i) =>
+        `<span class="sql-gutter-num">${i + 1}</span>`
+    ).join('');
+
+    info.textContent = `Rendering stack of ${activeSql.length} queries · ${lineCount.toLocaleString()} lines`;
+}
+function closeSqlPreview() {
+    document.getElementById('sql-modal').classList.add('hidden');
+    document.getElementById('sql-gutter').innerHTML = '';
+    sqlPreviewText = '';
+}
+
+function downloadSql() {
+    if (!sqlPreviewText) return;
+    const relName = document.getElementById('release-name').value.trim() || 'RELEASE';
+    const blob = new Blob([sqlPreviewText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'), { href: url, download: relName + '_000Scripts.sql' }).click();
+    URL.revokeObjectURL(url);
+    toast('SQL script saved to disk', 's');
+}
+function copySql() {
+    if (!sqlPreviewText) return;
+    const btn = document.getElementById('copy-sql-btn');
+    const finish = () => {
+        btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+        btn.classList.add('bg-indigo-500/20', 'text-indigo-300', 'border-indigo-500/30');
+        btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy Script`;
+    };
+    const onSuccess = () => {
+        btn.classList.remove('bg-indigo-500/20', 'text-indigo-300', 'border-indigo-500/30');
+        btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+        btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied!`;
+        toast('SQL sequence compiled and copied to clipboard', 's');
+        setTimeout(finish, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sqlPreviewText).then(onSuccess).catch(() => fallbackCopy(sqlPreviewText));
+    } else {
+        fallbackCopy(sqlPreviewText);
+    }
+}
+
+function fallbackCopy(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) toast('SQL compiled and copied to clipboard (fallback)', 's');
+        else toast('Unable to automatically capture clipboard', 'e');
+    } catch {
+        toast('Clipboard capture error', 'e');
+    }
+    document.body.removeChild(el);
+}
+
+document.getElementById('sql-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSqlPreview(); });
+
+function getOrderedSql() {
+    const activeSet = new Map(sqlContent.filter(s => !excludedRaw.has(s.path)).map(s => [s.path, s]));
+    const ordered = sqlOrder.map(p => activeSet.get(p)).filter(Boolean);
+    activeSet.forEach((s, p) => { if (!sqlOrder.includes(p)) ordered.push(s); });
+    return ordered;
+}
+
+// ── Keyboard Shortcuts Mapping ─────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    const modalOpen = id => !document.getElementById(id).classList.contains('hidden');
+
+    if (e.key === 'Escape') {
+        if (modalOpen('sql-modal'))        { closeSqlPreview(); return; }
+        if (modalOpen('append-modal'))     { closeAppendPrompt(); return; }
+        if (modalOpen('help-modal'))       { closeHelp(); return; }
+        if (modalOpen('validate-modal'))   { document.getElementById('validate-modal').classList.add('hidden'); return; }
+        if (modalOpen('summary-modal'))    { document.getElementById('summary-modal').classList.add('hidden'); return; }
+        if (modalOpen('conflict-modal'))   { closeConflictResolver(); return; }
+        if (modalOpen('checksum-modal'))   { document.getElementById('checksum-modal').classList.add('hidden'); return; }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault(); 
+        if (!mergeBtn.disabled) mergeBtn.click(); 
+        return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault(); 
+        if (!previewBtn.disabled) showSqlPreview(); 
+        return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const inp = document.getElementById('tree-search');
+        if (inp && !document.getElementById('tree-search-wrap').classList.contains('hidden')) { 
+            inp.focus(); 
+            inp.select(); 
+        }
+    }
+});
+
+// ── File reader interfaces ────────────────────────────────────────────────────
+const readBinary = f => new Promise((res, rej) => { 
+    const r = new FileReader(); 
+    r.onload = e => res(e.target.result); 
+    r.onerror = rej; 
+    r.readAsArrayBuffer(f); 
+});
+const readText = f => new Promise((res, rej) => { 
+    const r = new FileReader(); 
+    r.onload = e => res(e.target.result); 
+    r.onerror = rej; 
+    r.readAsText(f, 'utf-8'); 
+});
+
+// ── ZIP Package Creation Process ───────────────────────────────────────────────
+mergeBtn.onclick = async () => {
+    mergeBtn.disabled = true;
+    mergeBtn.classList.add('loading');
+    mergeBtn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Building Bundle...`;
+    const pw = document.getElementById('progress-wrap');
+    pw.classList.remove('hidden');
+
+    pbFill.classList.add('pb-active');
+    pbFill.style.width = '0%';
+    progressPct.textContent = '0%';
+    progressLabel.textContent = 'Analyzing workspace state indices...';
+
+    const zip = new JSZip(); 
+    let skipped = 0; 
+    const manifest = [];
+    const activeQueue = [...fileQueue.entries()].filter(([, { rawPath }]) => !excludedRaw.has(rawPath));
+    const activeSql   = getOrderedSql();
+
+    // Packing binaries
+    for (let i = 0; i < activeQueue.length; i++) {
+        const [cleanPath, { file }] = activeQueue[i]; 
+        progressLabel.textContent = 'Analyzing binary structure: ' + file.name;
+        try { 
+            const buf = await readBinary(file); 
+            if (buf.byteLength === 0 && file.size > 0) { 
+                skipped++; 
+                continue; 
+            } 
+            zip.file(cleanPath, buf); 
+            manifest.push({ path: cleanPath, size: buf.byteLength, note: '' }); 
+        } catch { 
+            skipped++; 
+        }
+        pbFill.style.width = Math.round(((i+1) / (activeQueue.length || 1)) * 40) + '%'; 
+        progressPct.textContent = pbFill.style.width;
+    }
+
+    // Packing and merging SQL
+    if (activeSql.length > 0) {
+        const parts = [];
+        for (let si = 0; si < activeSql.length; si++) {
+            const s = activeSql[si]; 
+            progressLabel.textContent = `Concatenating script ${si+1}/${activeSql.length}: ${s.path.split('/').pop()}`;
+            try { 
+                const txt = await readText(s.file); 
+                parts.push('/* ' + '═'.repeat(54) + '\n   COMPILED: ' + s.path + '\n   ' + '═'.repeat(54) + ' */\n' + txt); 
+            } catch { 
+                skipped++; 
+            }
+            pbFill.style.width = (40 + Math.round(((si+1)/activeSql.length)*15)) + '%'; 
+            progressPct.textContent = pbFill.style.width;
+        }
+        if (parts.length) { 
+            const merged = parts.join('\n\n'); 
+            zip.file('Scripts/000Scripts.sql', merged); 
+            manifest.push({ path:'Scripts/000Scripts.sql', size:merged.length, note:`Consolidated from ${activeSql.length} procedural scripts` }); 
+        }
+    }
+
+    const relNameBase  = document.getElementById('release-name').value.trim() || 'RELEASE';
+    const versionTag   = document.getElementById('version-tag').value.trim();
+    const relName      = relNameBase + (versionTag ? '_' + versionTag : '');
+    const officialDir  = document.getElementById('official-dir').value.trim();
+    const deployTargets = getDeploymentTargets();
+    const notesText    = document.getElementById('release-notes').value.trim();
+    if (notesText) {
+        const c = `========================================\nRELEASE MANIFEST LOG: ${relName}\nExport Timestamp: ${new Date().toLocaleString()}\n========================================\n\nNotes:\n${notesText}`;
+        zip.file('RELEASE_NOTES.txt', c);
+        manifest.push({ path:'RELEASE_NOTES.txt', size:c.length, note:'Automation injected log' });
+    }
+
+    const totalSize = manifest.reduce((s, e) => s + e.size, 0);
+    const W = 56;
+    let mf = `========================================================================\n`;
+    mf += `                      DEPLOYMENT RELEASE MANIFEST\n`;
+    mf += `========================================================================\n`;
+    mf += `Release Profile     : ${relName}\n`;
+    if (versionTag)           mf += `Version Tag         : ${versionTag}\n`;
+    if (officialDir)          mf += `Official Directory  : ${officialDir}\n`;
+    if (deployTargets.length) mf += `Deployment Targets  : ${deployTargets.join(', ')}\n`;
+    mf += `Generated On Timestamp: ${new Date().toLocaleString()}\n`;
+    mf += `Indexed Base Folders: ${folderCount}\n`;
+    mf += `Consolidated Assets : ${manifest.length} structures | ${(totalSize/1048576).toFixed(3)} Megabytes\n`;
+    mf += `------------------------------------------------------------------------\n\n`;
+    mf += 'PATH'.padEnd(W) + 'SIZE (bytes)'.padStart(14) + '  ANNOTATION\n';
+    mf += '─'.repeat(W+24) + '\n';
+    
+    for (const e of [...manifest].sort((a,b) => a.path.localeCompare(b.path))) {
+        mf += e.path.padEnd(W) + e.size.toLocaleString().padStart(14) + (e.note ? `  ${e.note}` : '') + '\n';
+    }
+    mf += '========================================================================\n'; 
+    zip.file('MANIFEST.txt', mf);
+
+    progressLabel.textContent = 'Executing DEFLATE compression engine...';
+    
+    const blob = await zip.generateAsync({ 
+        type:'blob', 
+        compression:'DEFLATE', 
+        compressionOptions:{ level:6 } 
+    }, m => { 
+        const p = 55 + Math.round(m.percent * .45); 
+        pbFill.style.width = p+'%'; 
+        progressPct.textContent = p+'%'; 
+    });
+    
+    pbFill.style.width = '100%'; 
+    progressPct.textContent = '100%';
+    progressLabel.textContent = 'Compression pipeline complete!' + (skipped ? ` (Omitted ${skipped} invalid resources)` : '');
+
+    const fname = relName + '.zip';
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'), { href:url, download:fname }).click();
+    URL.revokeObjectURL(url);
+
+    pushHistory({ 
+        name:fname, 
+        date:new Date().toLocaleString(), 
+        dll:activeQueue.length, 
+        sql:activeSql.length, 
+        folders:folderCount, 
+        mb:(blob.size/1048576).toFixed(2) 
+    });
+    
+    pbFill.classList.remove('pb-active');
+    toast(`Successfully generated and downloaded package: ${fname}`, 's', 6000);
+    mergeBtn.classList.remove('loading');
+    mergeBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Generate &amp; Download Bundle <span class="hidden md:inline-block px-1.5 py-0.5 rounded bg-black/25 text-[9px] font-bold tracking-normal ml-1 text-indigo-200">Ctrl+↵</span>`;
+    mergeBtn.disabled = false;
+    setTimeout(() => { pw.classList.add('hidden'); pbFill.style.width = '0%'; }, 5000);
+};
+
+// ── DLL PE Version Parser ──────────────────────────────────────────────────────
+// Reads VS_FIXEDFILEINFO from a DLL/EXE PE binary (ArrayBuffer).
+// Resource subdirectory offsets are relative to the .rsrc SECTION start,
+// NOT the resource directory start — that was the prior bug.
+function readPeVersion(buffer) {
+    try {
+        const v   = new DataView(buffer);
+        const len = buffer.byteLength;
+        if (len < 64) return null;
+
+        // MZ signature
+        if (v.getUint16(0, true) !== 0x5A4D) return null;
+
+        // PE header offset
+        const peOff = v.getUint32(0x3C, true);
+        if (peOff + 24 > len) return null;
+        if (v.getUint32(peOff, true) !== 0x00004550) return null; // 'PE\0\0'
+
+        const numSections   = v.getUint16(peOff + 6,  true);
+        const optHeaderSize = v.getUint16(peOff + 20, true);
+        const optOff        = peOff + 24;
+        if (optOff + optHeaderSize > len) return null;
+
+        const is64   = v.getUint16(optOff, true) === 0x20B;
+        const ddBase = optOff + (is64 ? 112 : 96);
+        const rsrcRVA = v.getUint32(ddBase + 16, true);
+        if (!rsrcRVA) return null;
+
+        const sectBase = optOff + optHeaderSize;
+
+        // Helper: convert an RVA to a file offset by scanning section table
+        function rvaToRaw(rva) {
+            for (let i = 0; i < numSections; i++) {
+                const s     = sectBase + i * 40;
+                if (s + 40 > len) break;
+                const vaddr = v.getUint32(s + 12, true);
+                const vsz   = v.getUint32(s + 16, true);
+                if (rva >= vaddr && rva < vaddr + vsz)
+                    return v.getUint32(s + 20, true) + (rva - vaddr);
+            }
+            return 0;
+        }
+
+        // File offset of .rsrc SECTION start (PointerToRawData of that section)
+        // We need this separately because subdirectory offsets are relative to it.
+        let rsrcSectionRaw = 0;
+        let rsrcSectionRVA = 0;
+        for (let i = 0; i < numSections; i++) {
+            const s     = sectBase + i * 40;
+            if (s + 40 > len) break;
+            const vaddr = v.getUint32(s + 12, true);
+            const vsz   = v.getUint32(s + 16, true);
+            if (rsrcRVA >= vaddr && rsrcRVA < vaddr + vsz) {
+                rsrcSectionRaw = v.getUint32(s + 20, true);
+                rsrcSectionRVA = vaddr;
+                break;
+            }
+        }
+        if (!rsrcSectionRaw) return null;
+
+        // File offset of the resource DIRECTORY itself
+        const rsrcDirRaw = rsrcSectionRaw + (rsrcRVA - rsrcSectionRVA);
+
+        // Read directory entries at a given file offset.
+        // subdirOffset values (with bit 31 set) are relative to rsrcSectionRaw.
+        function dirEntries(fileOff) {
+            if (fileOff + 16 > len) return [];
+            const named = v.getUint16(fileOff + 12, true);
+            const cnt   = v.getUint16(fileOff + 14, true);
+            const out   = [];
+            for (let i = 0; i < named + cnt; i++) {
+                const e = fileOff + 16 + i * 8;
+                if (e + 8 > len) break;
+                out.push({ id: v.getUint32(e, true), data: v.getUint32(e + 4, true) });
+            }
+            return out;
+        }
+
+        // Level 1 — find RT_VERSION (type id = 16)
+        const rootEntries = dirEntries(rsrcDirRaw);
+        const typeEntry   = rootEntries.find(e => !(e.id & 0x80000000) && e.id === 16);
+        if (!typeEntry || !(typeEntry.data & 0x80000000)) return null;
+
+        // Level 2 — first resource name/ID under RT_VERSION
+        // Offset is relative to rsrcSectionRaw (section start), not directory start
+        const lvl2 = dirEntries(rsrcSectionRaw + (typeEntry.data & 0x7FFFFFFF));
+        if (!lvl2.length || !(lvl2[0].data & 0x80000000)) return null;
+
+        // Level 3 — first language entry
+        const lvl3 = dirEntries(rsrcSectionRaw + (lvl2[0].data & 0x7FFFFFFF));
+        if (!lvl3.length) return null;
+
+        // Leaf — data entry (bit 31 clear)
+        const leafOff = rsrcSectionRaw + (lvl3[0].data & 0x7FFFFFFF);
+        if (leafOff + 8 > len) return null;
+        const dataRVA  = v.getUint32(leafOff,     true);
+        const dataSize = v.getUint32(leafOff + 4, true);
+
+        const dataRaw = rvaToRaw(dataRVA);
+        if (!dataRaw || dataRaw >= len) return null;
+
+        // Scan for VS_FIXEDFILEINFO signature 0xFEEF04BD (WORD-aligned)
+        const scanEnd = Math.min(dataRaw + Math.min(dataSize, 512), len - 20);
+        for (let i = dataRaw; i < scanEnd; i += 2) {
+            if (v.getUint32(i, true) === 0xFEEF04BD) {
+                const ms  = v.getUint32(i + 8,  true);
+                const ls  = v.getUint32(i + 12, true);
+                return `${(ms >> 16) & 0xFFFF}.${ms & 0xFFFF}.${(ls >> 16) & 0xFFFF}.${ls & 0xFFFF}`;
+            }
+        }
+        return null;
+    } catch { return null; }
+}
+
+// ── Async DLL Version Loader ───────────────────────────────────────────────────
+let _versionLoadId = 0; // cancel stale loads when workspace resets
+async function loadDllVersions() {
+    const runId = ++_versionLoadId;
+    const rows  = Array.from(treeView.querySelectorAll('[data-dll]'));
+    if (!rows.length) return;
+
+    const BATCH = 10; // concurrent reads
+    for (let i = 0; i < rows.length; i += BATCH) {
+        if (_versionLoadId !== runId) return; // workspace was reset
+        const chunk = rows.slice(i, i + BATCH);
+        await Promise.all(chunk.map(async row => {
+            // Use rawFileMap so each row reads its own file (winner or loser)
+            const rawPath = row.dataset.rawPath;
+            const file    = rawPath ? rawFileMap.get(rawPath) : fileQueue.get(row.dataset.dll)?.file;
+            const verEl   = row.querySelector('.dll-ver');
+            const dateEl  = row.querySelector('.dll-date');
+            if (!file || !verEl) return;
+            // Populate date modified immediately (no binary read needed)
+            if (dateEl) {
+                dateEl.classList.remove('loading');
+                if (file.lastModified) {
+                    const d = new Date(file.lastModified);
+                    const pad = n => String(n).padStart(2, '0');
+                    dateEl.textContent = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+                } else {
+                    dateEl.textContent = '—';
+                }
+            }
+            try {
+                const buf     = await readBinary(file);
+                const version = readPeVersion(buf);
+                verEl.classList.remove('loading');
+                if (version) {
+                    verEl.textContent = version;
+                    // Update conflict tag to show version number inline
+                    const tag = row.querySelector('.conflict-tag');
+                    if (tag) {
+                        const isWinner = row.classList.contains('dup-winner');
+                        tag.textContent = isWinner ? `Winner · ${version}` : `Replaced · ${version}`;
+                    }
+                } else {
+                    verEl.classList.add('unknown');
+                    verEl.textContent = '—';
+                }
+            } catch {
+                verEl.remove();
+            }
+        }));
+    }
+}
+
+// ── Feature 1: Accent Color Picker ────────────────────────────────────────────
+const ACCENT_KEY = 'rm-accent';
+function setAccent(color, glow) {
+    document.documentElement.style.setProperty('--accent', color);
+    document.documentElement.style.setProperty('--accent-glow', glow);
+    localStorage.setItem(ACCENT_KEY, JSON.stringify({ color, glow }));
+    document.querySelectorAll('.accent-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.color === color);
+    });
+}
+(function initAccent() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(ACCENT_KEY));
+        if (saved?.color) setAccent(saved.color, saved.glow);
+    } catch {}
+})();
+
+// ── Feature 2: Auto release name + custom exclusions ──────────────────────────
+// Integrated directly into processFiles and clearAll above.
+
+// ── Feature 3: SQL Syntax Validation ──────────────────────────────────────────
+async function runSqlValidation() {
+    const modal = document.getElementById('validate-modal');
+    const list  = document.getElementById('val-list');
+    const info  = document.getElementById('val-info');
+    modal.classList.remove('hidden');
+    list.innerHTML = '<p class="text-xs text-dim animate-pulse">Scanning SQL scripts…</p>';
+    info.textContent = 'Scanning scripts…';
+
+    const activeSql = getOrderedSql();
+    if (!activeSql.length) {
+        list.innerHTML = '<p class="text-xs text-dim italic">No SQL files selected.</p>';
+        return;
+    }
+
+    const rows = [];
+    let errorCount = 0, warnCount = 0;
+
+    for (const s of activeSql) {
+        const fname = s.path.split('/').pop();
+        const fileIssues = [];
+        try {
+            const txt = await readText(s.file);
+            // 1. Unclosed block comments
+            const opens  = (txt.match(/\/\*/g) || []).length;
+            const closes = (txt.match(/\*\//g) || []).length;
+            if (opens !== closes)
+                fileIssues.push({ level:'error', msg:`Unclosed block comment — ${opens} open vs ${closes} closed` });
+
+            // 2. BEGIN / END balance
+            const begins = (txt.match(/\bBEGIN\b/gi) || []).length;
+            const ends   = (txt.match(/\bEND\b/gi)   || []).length;
+            if (begins !== ends)
+                fileIssues.push({ level:'warn', msg:`BEGIN/END mismatch — ${begins} BEGIN, ${ends} END` });
+
+            // 3. Missing GO batch separator
+            if (!/^\s*GO\s*$/mi.test(txt))
+                fileIssues.push({ level:'info', msg:'No GO batch separator found (MSSQL)' });
+
+            // 4. Empty file
+            if (txt.trim().length === 0)
+                fileIssues.push({ level:'warn', msg:'File appears to be empty' });
+
+        } catch {
+            fileIssues.push({ level:'error', msg:'Could not read file' });
+        }
+
+        const levelCls = { error:'val-error', warn:'val-warn', info:'val-info' };
+        const levelBadge = { error:'🔴 Error', warn:'🟡 Warning', info:'🔵 Info' };
+
+        if (fileIssues.length === 0) {
+            rows.push(`<div class="val-ok rounded-xl px-4 py-2.5 flex items-center gap-3">
+                <span class="text-xs font-mono font-bold text-emerald-400 flex-1 truncate">${fname}</span>
+                <span class="text-[10px] text-emerald-400 font-semibold">✓ Clean</span>
+            </div>`);
+        } else {
+            fileIssues.forEach(iss => {
+                if (iss.level === 'error') errorCount++;
+                else if (iss.level === 'warn') warnCount++;
+                rows.push(`<div class="${levelCls[iss.level]} rounded-xl px-4 py-2.5 flex items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-mono font-bold truncate">${fname}</p>
+                        <p class="text-[11px] text-dim mt-0.5">${iss.msg}</p>
+                    </div>
+                    <span class="text-[10px] font-bold whitespace-nowrap">${levelBadge[iss.level]}</span>
+                </div>`);
+            });
+        }
+    }
+
+    list.innerHTML = rows.join('');
+    info.textContent = `${activeSql.length} files · ${errorCount} error${errorCount !== 1 ? 's' : ''} · ${warnCount} warning${warnCount !== 1 ? 's' : ''}`;
+    if (errorCount === 0 && warnCount === 0) toast('All SQL scripts passed validation', 's');
+    else toast(`Validation: ${errorCount} error(s), ${warnCount} warning(s)`, errorCount > 0 ? 'e' : 'i');
+}
+document.getElementById('validate-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
+
+// ── Feature 4: Export Release Summary ────────────────────────────────────────
+let currentSummaryFmt = 'slack';
+function setSummaryFmt(fmt) {
+    currentSummaryFmt = fmt;
+    ['slack','email','md'].forEach(f => {
+        const btn = document.getElementById('fmt-' + f);
+        btn.className = f === fmt
+            ? 'text-xs px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/30 font-semibold transition-all'
+            : 'text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-dim font-semibold transition-all hover:bg-white/10';
+    });
+    showExportSummary();
+}
+
+function showExportSummary() {
+    const relName       = document.getElementById('release-name').value.trim() || 'RELEASE';
+    const vTag          = document.getElementById('version-tag').value.trim();
+    const officialDir   = document.getElementById('official-dir').value.trim();
+    const deployTargets = getDeploymentTargets();
+    const notes         = document.getElementById('release-notes').value.trim();
+    const total         = fileQueue.size + sqlContent.length;
+    const dupCount      = [...dupMap.values()].filter(v => v.length > 1).length;
+    const fullName      = relName + (vTag ? ' ' + vTag : '');
+    const dateStr       = new Date().toLocaleString();
+    const targetsStr    = deployTargets.length ? deployTargets.join(', ') : null;
+
+    let txt = '';
+    if (currentSummaryFmt === 'slack') {
+        txt = `*📦 Release Bundle Ready: ${fullName}*\n`;
+        txt += `> • ${fileQueue.size} DLL/binary files  |  ${sqlContent.length} SQL scripts  |  ${total} total assets\n`;
+        if (folderCount > 1) txt += `> • Merged from ${folderCount} directory branches\n`;
+        if (dupCount)        txt += `> • ⚠️ ${dupCount} DLL conflict(s) resolved (last-in-wins)\n`;
+        if (officialDir)     txt += `> • 📁 Official Dir: \`${officialDir}\`\n`;
+        if (targetsStr)      txt += `> • 🚀 Deploy To: ${targetsStr}\n`;
+        if (folderNames.length) txt += `>\n> *Release Folders:*\n` + folderNames.map(n => `> • ${n}`).join('\n') + '\n';
+        if (notes)           txt += `>\n> *Release Notes:*\n> ${notes.replace(/\n/g, '\n> ')}\n`;
+        txt += `\n_Generated ${dateStr} by Release Merger Premium_`;
+    } else if (currentSummaryFmt === 'email') {
+        txt = `Subject: Release Bundle Ready – ${fullName}\n\n`;
+        txt += `Hello Team,\n\nThe following release bundle has been packaged and is ready for deployment:\n\n`;
+        txt += `  Bundle Name : ${fullName}\n`;
+        txt += `  DLL Files   : ${fileQueue.size}\n`;
+        txt += `  SQL Scripts : ${sqlContent.length}\n`;
+        txt += `  Total Assets: ${total}\n`;
+        if (folderCount > 1) txt += `  Source Dirs : ${folderCount} branches merged\n`;
+        if (dupCount)        txt += `  Conflicts   : ${dupCount} DLL(s) resolved (last-in-wins)\n`;
+        if (officialDir)     txt += `  Official Dir: ${officialDir}\n`;
+        if (targetsStr)      txt += `  Deploy To   : ${targetsStr}\n`;
+        if (folderNames.length) txt += `\nRelease Folders:\n` + folderNames.map(n => `  - ${n}`).join('\n') + '\n';
+        if (notes) txt += `\nRelease Notes:\n${notes}\n`;
+        txt += `\nGenerated: ${dateStr}\nTool: Release Merger Premium v4.0\n\nRegards,\nMyo`;
+    } else {
+        txt = `## 📦 Release Bundle: \`${fullName}\`\n\n`;
+        txt += `| Field | Value |\n|---|---|\n`;
+        txt += `| DLL / Binary Files | \`${fileQueue.size}\` |\n`;
+        txt += `| SQL Scripts | \`${sqlContent.length}\` |\n`;
+        txt += `| Total Assets | \`${total}\` |\n`;
+        if (folderCount > 1) txt += `| Source Branches | \`${folderCount}\` |\n`;
+        if (dupCount)        txt += `| DLL Conflicts Resolved | \`${dupCount}\` |\n`;
+        if (officialDir)     txt += `| Official Directory | \`${officialDir}\` |\n`;
+        if (targetsStr)      txt += `| Deployment Targets | ${targetsStr} |\n`;
+        if (folderNames.length) txt += `\n### Release Folders\n\n` + folderNames.map(n => `- ${n}`).join('\n') + '\n';
+        if (notes) txt += `\n### Release Notes\n\n${notes}\n`;
+        txt += `\n---\n*Generated ${dateStr} · Release Merger Premium v4.0*`;
+    }
+    document.getElementById('summary-text').value = txt;
+    document.getElementById('summary-modal').classList.remove('hidden');
+}
+
+function copySummary() {
+    const txt = document.getElementById('summary-text').value;
+    const btn = document.getElementById('copy-summary-btn');
+    const reset = () => { btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy to Clipboard`; };
+    const onOk = () => {
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied!`;
+        toast('Release summary copied to clipboard', 's');
+        setTimeout(reset, 2000);
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(onOk).catch(() => { fallbackCopy(txt); onOk(); });
+    else { fallbackCopy(txt); onOk(); }
+}
+document.getElementById('summary-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
+
+// ── Feature 5: Release Comparison ────────────────────────────────────────────
+let cmpSets = { A: null, B: null };
+let cmpReportText = '';
+let compareOpen = false;
+let cmpSqlOrders = { a: [], b: [] };
+let cmpSqlOrderOpen = { a: false, b: false };
+
+function toggleCompare() {
+    const body = document.getElementById('compare-body');
+    const icon = document.getElementById('compare-icon');
+    compareOpen = !compareOpen;
+    body.style.maxHeight = compareOpen ? '1800px' : '0';
+    icon.style.transform = compareOpen ? 'rotate(180deg)' : '';
+    if (compareOpen) body.classList.remove('shut'); else body.classList.add('shut');
+}
+
+function loadCompareSet(side, files) {
+    const paths = new Map();
+    Array.from(files).forEach(f => {
+        const p = f.webkitRelativePath || f.name;
+        const parts = p.split('/');
+        // Normalise: strip root folder prefix
+        const rel = parts.slice(1).join('/');
+        if (rel) paths.set(rel, f.size);
+    });
+    cmpSets[side] = paths;
+    document.getElementById('cmp-' + side.toLowerCase() + '-label').textContent =
+        `${paths.size} files loaded`;
+    document.getElementById('run-compare-btn').disabled = !(cmpSets.A && cmpSets.B);
+}
+
+function runComparison() {
+    if (!cmpSets.A || !cmpSets.B) return;
+    const A = cmpSets.A, B = cmpSets.B;
+    const added = [], removed = [], same = [];
+
+    B.forEach((size, path) => {
+        if (!A.has(path)) added.push(path);
+        else same.push(path);
+    });
+    A.forEach((size, path) => {
+        if (!B.has(path)) removed.push(path);
+    });
+
+    document.getElementById('cmp-stat-added').textContent   = added.length   + ' added';
+    document.getElementById('cmp-stat-removed').textContent = removed.length + ' removed';
+    document.getElementById('cmp-stat-same').textContent    = same.length    + ' unchanged';
+
+    const table = document.getElementById('compare-table');
+    const rows = [
+        ...added.map(p   => `<div class="diff-row-added   rounded-lg px-3 py-1.5 flex items-center gap-2"><span class="text-[10px] font-bold text-emerald-400 w-14 flex-shrink-0">+ ADDED</span><span class="text-xs font-mono truncate text-emerald-300">${p}</span></div>`),
+        ...removed.map(p => `<div class="diff-row-removed rounded-lg px-3 py-1.5 flex items-center gap-2"><span class="text-[10px] font-bold text-rose-400 w-14 flex-shrink-0">− REMOVED</span><span class="text-xs font-mono truncate text-rose-300">${p}</span></div>`),
+        ...same.map(p    => `<div class="diff-row-same    rounded-lg px-3 py-1.5 flex items-center gap-2"><span class="text-[10px] font-bold text-dim w-14 flex-shrink-0">  SAME</span><span class="text-xs font-mono truncate text-dim">${p}</span></div>`)
+    ];
+    table.innerHTML = rows.join('') || '<p class="text-xs text-dim italic">No files to compare.</p>';
+    document.getElementById('compare-results').classList.remove('hidden');
+
+    cmpReportText = `RELEASE COMPARISON REPORT — ${new Date().toLocaleString()}\n`;
+    cmpReportText += `Added   : ${added.length}\nRemoved : ${removed.length}\nSame    : ${same.length}\n\n`;
+    if (added.length)   cmpReportText += '=== ADDED ===\n'   + added.map(p => '+ ' + p).join('\n') + '\n\n';
+    if (removed.length) cmpReportText += '=== REMOVED ===\n' + removed.map(p => '- ' + p).join('\n') + '\n\n';
+    toast(`Diff complete — ${added.length} added · ${removed.length} removed`, 'i');
+
+    cmpSqlOrders.a = [...A.keys()].filter(p => p.toLowerCase().endsWith('.sql')).sort();
+    cmpSqlOrders.b = [...B.keys()].filter(p => p.toLowerCase().endsWith('.sql')).sort();
+    const hasSql = cmpSqlOrders.a.length > 0 || cmpSqlOrders.b.length > 0;
+    const cmpSqlSec = document.getElementById('cmp-sql-sections');
+    if (hasSql) {
+        cmpSqlSec.classList.remove('hidden');
+        if (cmpSqlOrders.a.length > 0) renderCmpSqlOrder('a'); else document.getElementById('cmp-sql-order-section-a').classList.add('hidden');
+        if (cmpSqlOrders.b.length > 0) renderCmpSqlOrder('b'); else document.getElementById('cmp-sql-order-section-b').classList.add('hidden');
+    } else {
+        cmpSqlSec.classList.add('hidden');
+    }
+}
+
+function copyCmpReport() {
+    if (!cmpReportText) return;
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(cmpReportText).then(() => toast('Comparison report copied', 's'));
+    else { fallbackCopy(cmpReportText); toast('Comparison report copied (fallback)', 's'); }
+}
+
+function toggleCmpSqlOrder(side) {
+    const body = document.getElementById('cmp-sql-order-body-' + side);
+    const icon = document.getElementById('cmp-sql-order-icon-' + side);
+    cmpSqlOrderOpen[side] = !cmpSqlOrderOpen[side];
+    if (cmpSqlOrderOpen[side]) { body.classList.remove('shut'); body.style.maxHeight = '600px'; icon.style.transform = 'rotate(180deg)'; }
+    else { body.classList.add('shut'); body.style.maxHeight = '0'; icon.style.transform = ''; }
+}
+
+function renderCmpSqlOrder(side) {
+    const list = document.getElementById('cmp-sql-order-list-' + side);
+    list.innerHTML = '';
+    cmpSqlOrders[side].forEach((rawPath, idx) => {
+        const fname = rawPath.split('/').pop();
+        const item = document.createElement('div');
+        item.className = 'sql-order-item';
+        item.draggable = true;
+        item.dataset.path = rawPath;
+        const numColor = side === 'b' ? 'text-indigo-300' : 'text-slate-300';
+        item.innerHTML = `
+            <span class="text-xs select-none opacity-40 hover:opacity-100 cursor-grab">⠿</span>
+            <span class="text-[10px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded ${numColor}">${String(idx+1).padStart(2,'0')}</span>
+            <span class="text-xs truncate text-slate-300 font-mono flex-1" title="${rawPath}">${fname}</span>
+        `;
+        item.addEventListener('dragstart', e => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', rawPath);
+            setTimeout(() => item.classList.add('dragging'), 0);
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            list.querySelectorAll('.sql-order-item').forEach(i => i.classList.remove('drag-over'));
+            item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            const dragPath = e.dataTransfer.getData('text/plain');
+            if (dragPath === rawPath) return;
+            const fi = cmpSqlOrders[side].indexOf(dragPath);
+            const ti = cmpSqlOrders[side].indexOf(rawPath);
+            if (fi === -1 || ti === -1) return;
+            cmpSqlOrders[side].splice(fi, 1);
+            cmpSqlOrders[side].splice(ti, 0, dragPath);
+            renderCmpSqlOrder(side);
+        });
+        list.appendChild(item);
+    });
+}
+
+function resetCmpSqlOrder(side) {
+    cmpSqlOrders[side].sort((a, b) => a.localeCompare(b));
+    renderCmpSqlOrder(side);
+    toast('SQL execution order reset to alphabetical sequence', 'i');
+}
+
+// ── Visitor Counter ─────────────────────────────────────────────────────────────
+(async function trackVisit() {
+    try {
+        const r = await fetch('https://api.countapi.xyz/hit/mecwise-release-merger/visits');
+        if (!r.ok) return;
+        const { value } = await r.json();
+        const el = document.getElementById('visitor-count');
+        if (el) el.textContent = `👥 ${value.toLocaleString()} visit${value === 1 ? '' : 's'}`;
+    } catch { /* offline or blocked — silently skip */ }
+})();
+
+// ── Feature 6: Version tag ──────────────────────────────────────────────────────
+// Integrated directly into mergeBtn.onclick above (relName + versionTag).
+
+// ── Feature 7: Duplicate File Resolver ─────────────────────────────────────────
+function showConflictResolver() {
+    const conflicts = [...dupMap.entries()].filter(([, paths]) => paths.length > 1);
+    if (conflicts.length === 0) { toast('No conflicts to resolve', 'i'); return; }
+    const list = document.getElementById('conflict-list');
+    list.innerHTML = '';
+    conflicts.forEach(([cleanPath, rawPaths]) => {
+        const current = fileQueue.get(cleanPath)?.rawPath;
+        const fileName = cleanPath.split('/').pop();
+        const card = document.createElement('div');
+        card.className = 'rounded-xl border border-amber-500/15 bg-amber-500/5 p-3';
+        card.innerHTML = `<p class="text-xs font-bold text-amber-300 mb-2 font-mono truncate" title="${cleanPath}">${fileName}</p>
+            <p class="text-[10px] text-muted mb-2">${cleanPath}</p>
+            <div class="flex flex-col gap-1.5" id="cr-${CSS.escape(cleanPath)}"></div>`;
+        list.appendChild(card);
+        const optContainer = card.querySelector(`#cr-${CSS.escape(cleanPath)}`);
+        rawPaths.forEach(rp => {
+            const folder = rp.split('/')[0];
+            const isWinner = rp === current;
+            const btn = document.createElement('button');
+            btn.className = `w-full text-left text-[11px] font-mono px-3 py-2 rounded-lg border transition-all ${isWinner ? 'bg-amber-500/15 border-amber-400/40 text-amber-200' : 'bg-white/3 border-white/8 text-dim hover:bg-white/8'}`;
+            btn.innerHTML = `${isWinner ? '✔ ' : ''}<span class="font-bold">${folder}</span> <span class="opacity-60 ml-1">${rp.substring(folder.length)}</span>`;
+            btn.onclick = () => {
+                fileQueue.set(cleanPath, { file: rawFileMap.get(rp), rawPath: rp });
+                optContainer.querySelectorAll('button').forEach(b => {
+                    const isNow = b === btn;
+                    b.className = `w-full text-left text-[11px] font-mono px-3 py-2 rounded-lg border transition-all ${isNow ? 'bg-amber-500/15 border-amber-400/40 text-amber-200' : 'bg-white/3 border-white/8 text-dim hover:bg-white/8'}`;
+                    b.innerHTML = b.innerHTML.replace(/^✔ /, '');
+                    if (isNow) b.innerHTML = '✔ ' + b.innerHTML;
+                });
+                buildTree(treeData, treeView, 0, '');
+                updateReleasePreview();
+                toast(`Winner set: ${folder}`, 's');
+            };
+            optContainer.appendChild(btn);
+        });
+    });
+    document.getElementById('conflict-modal').classList.remove('hidden');
+}
+function closeConflictResolver() { document.getElementById('conflict-modal').classList.add('hidden'); }
+
+// ── Feature 10: Live Email / Slack Preview ──────────────────────────────────────
+let notesFmt = 'slack';
+function setNotesPreviewFmt(fmt) {
+    notesFmt = fmt;
+    document.getElementById('np-slack').className = `text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all ${fmt==='slack' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-dim border-white/10'}`;
+    document.getElementById('np-email').className = `text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all ${fmt==='email' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-dim border-white/10'}`;
+    updateNotesPreview();
+}
+function updateNotesPreview() {
+    const notes = document.getElementById('release-notes').value.trim();
+    const box = document.getElementById('notes-preview-box');
+    if (!notes) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    const name = document.getElementById('release-name').value.trim() || '(Bundle Name)';
+    const dllCount = [...fileQueue.entries()].filter(([,{rawPath}]) => !excludedRaw.has(rawPath)).length;
+    const sqlCount = sqlContent.filter(s => !excludedRaw.has(s.path)).length;
+    let preview = '';
+    if (notesFmt === 'slack') {
+        preview = `*${name}*\n> ${notes.replace(/\n/g, '\n> ')}\n\n:package: *${dllCount} DLL* · :scroll: *${sqlCount} SQL*`;
+    } else {
+        preview = `Subject: Release — ${name}\n\n${notes}\n\n---\nFiles: ${dllCount} DLL, ${sqlCount} SQL script${sqlCount!==1?'s':''}`;
+    }
+    document.getElementById('notes-preview-content').textContent = preview;
+}
+
+// ── Feature 11: SHA-256 Checksum Report ────────────────────────────────────────
+let _checksumText = '';
+async function showChecksumReport() {
+    document.getElementById('checksum-modal').classList.remove('hidden');
+    const statusEl = document.getElementById('checksum-status');
+    const contentEl = document.getElementById('checksum-content');
+    contentEl.textContent = '';
+    const active = [...fileQueue.entries()].filter(([,{rawPath}]) => !excludedRaw.has(rawPath));
+    const activeSql = sqlContent.filter(s => !excludedRaw.has(s.path));
+    statusEl.textContent = `Computing hashes for ${active.length + activeSql.length} files...`;
+    const lines = [`SHA-256 Checksum Report — ${document.getElementById('release-name').value.trim() || 'Bundle'}`,
+        `Generated: ${new Date().toISOString()}`, '─'.repeat(80), ''];
+    let done = 0;
+    for (const [cleanPath, {file}] of active) {
+        try {
+            const buf = await readBinary(file);
+            const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+            const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            lines.push(`${hex}  ${cleanPath}`);
+        } catch { lines.push(`${'?'.repeat(64)}  ${cleanPath}  [read error]`); }
+        done++;
+        statusEl.textContent = `Hashing ${done}/${active.length + activeSql.length}...`;
+        contentEl.textContent = lines.join('\n');
+    }
+    for (const {path, file} of activeSql) {
+        try {
+            const text = await readText(file);
+            const buf = new TextEncoder().encode(text);
+            const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+            const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            lines.push(`${hex}  Scripts/000Scripts.sql (includes: ${path.split('/').pop()})`);
+        } catch { lines.push(`${'?'.repeat(64)}  ${path}  [read error]`); }
+        done++;
+        statusEl.textContent = `Hashing ${done}/${active.length + activeSql.length}...`;
+        contentEl.textContent = lines.join('\n');
+    }
+    _checksumText = lines.join('\n');
+    statusEl.textContent = `${done} file${done!==1?'s':''} hashed — SHA-256`;
+    contentEl.textContent = _checksumText;
+}
+function copyChecksumReport() { navigator.clipboard.writeText(_checksumText).then(() => toast('Checksum report copied', 's')); }
+function downloadChecksumReport() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([_checksumText], {type:'text/plain'}));
+    a.download = 'CHECKSUMS_SHA256.txt'; a.click();
+}
+
+// ── Feature 12: Rollback Bundle ─────────────────────────────────────────────────
+async function generateRollbackBundle() {
+    const conflicts = [...dupMap.entries()].filter(([, paths]) => paths.length > 1);
+    if (conflicts.length === 0) { toast('No conflicting files — rollback bundle not needed', 'i'); return; }
+    toast('Building rollback bundle...', 'i', 3000);
+    const zip = new JSZip();
+    const manifest = [`Rollback Bundle — ${new Date().toISOString()}`,
+        `Contains: files that will be OVERWRITTEN by the main bundle`, '─'.repeat(60), ''];
+    for (const [cleanPath, rawPaths] of conflicts) {
+        const winnerPath = fileQueue.get(cleanPath)?.rawPath;
+        const losers = rawPaths.filter(rp => rp !== winnerPath);
+        for (const rp of losers) {
+            const file = rawFileMap.get(rp);
+            if (!file) continue;
+            try {
+                const buf = await readBinary(file);
+                const folder = rp.split('/')[0];
+                zip.file(`rollback/${folder}/${cleanPath}`, buf);
+                manifest.push(`rollback/${folder}/${cleanPath}`);
+            } catch { manifest.push(`[error] ${rp}`); }
+        }
+    }
+    zip.file('ROLLBACK_MANIFEST.txt', manifest.join('\n'));
+    const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:6} });
+    const relName = document.getElementById('release-name').value.trim() || 'release';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${relName}_ROLLBACK.zip`;
+    a.click();
+    toast(`Rollback bundle downloaded — ${conflicts.length} file${conflicts.length!==1?'s':''} included`, 's', 5000);
+}
+</script>
+</body>
+</html>
